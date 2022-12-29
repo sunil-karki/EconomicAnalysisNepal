@@ -1,0 +1,73 @@
+---
+title: "Analyzing economic trends in Nepal"
+output: html_notebook
+---
+
+
+```{r}
+# Import packages
+library(dplyr)
+```
+
+```{r}
+# Setting environment
+# remove(list=ls())
+setwd("C:\\Users\\sunil\\Downloads\\College\\DAV\\Project")
+# make evironment not to change large number to exponential
+options(scipen = 999)
+```
+
+```{r}
+# Import dataset
+nepal_dt <- read.csv("Source Dataset-API_NPL_DS2.csv", skip=4, header=TRUE, stringsAsFactors = FALSE)
+meta_country <- read.csv("MetaData_Country.csv", header=TRUE, stringsAsFactors = FALSE)
+meta_indictr <- read.csv("MetaData_Indicator.csv", header=TRUE, stringsAsFactors = FALSE)
+nepal_dt
+meta_country
+meta_indictr
+```
+
+```{r}
+temp_df = filter(nepal_dt, grepl("tax", tolower(IndicatorName), fixed = TRUE) | grepl("tax", tolower(IndicatorCode), fixed = TRUE))
+nepal_df <- temp_df
+nepal_df
+```
+
+```{r}
+dim(nepal_df)
+```
+
+```{r}
+temp_df = filter(nepal_dt, grepl("gdp", tolower(IndicatorName), fixed = TRUE) | grepl("gdp", tolower(IndicatorCode), fixed = TRUE))
+nepal_df <- rbind(nepal_df, temp_df)
+nepal_df
+```
+
+```{r}
+dim(nepal_df)
+```
+
+```{r}
+temp_df = filter(nepal_dt, grepl("employment", tolower(IndicatorName), fixed = TRUE) | grepl("employment", tolower(IndicatorCode), fixed = TRUE))
+nepal_df <- rbind(nepal_df, temp_df)
+nepal_df
+```
+
+```{r}
+
+```
+
+```{r}
+plot(nepal_df)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
