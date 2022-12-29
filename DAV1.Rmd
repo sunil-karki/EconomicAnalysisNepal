@@ -7,12 +7,14 @@ output: html_notebook
 ```{r}
 # Import packages
 library(dplyr)
+library(data.table)
+library(ggplot2)
 ```
 
 ```{r}
 # Setting environment
 # remove(list=ls())
-setwd("C:\\Users\\sunil\\Downloads\\College\\DAV\\Project")
+# setwd("C:\\Users\\sunil\\Downloads\\College\\DAV\\Project")
 # make evironment not to change large number to exponential
 options(scipen = 999)
 ```
@@ -54,7 +56,44 @@ nepal_df
 ```
 
 ```{r}
+# Drop first and second column
+nepal_df <- nepal_df[-c(1,2)]
+nepal_df
+```
 
+```{r}
+# unique(nepal_df$IndicatorName)
+table(tolower(nepal_df$IndicatorName))
+```
+
+
+```{r}
+# Transposing the dataframe
+# t(nepal_df)
+
+df_t <- transpose(nepal_df)
+rownames(df_t) <- colnames(nepal_df)
+colnames(df_t) <- rownames(nepal_df)
+
+# Rename the columns with the first row. Columns are not properly renamed from above lines.
+colnames(df_t) <- df_t[1,]
+# Remove the first row.
+df_t <- df_t[-1:-2,]
+nepal_df <- df_t
+nepal_df
+```
+
+```{r}
+nepal_df[0]
+```
+
+```{r}
+df_t <- nepal_df %>% mutate_if(is.character, as.numeric)
+View(df_t)
+```
+
+```{r}
+cor(nepal_df)
 ```
 
 ```{r}
