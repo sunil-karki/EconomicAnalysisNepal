@@ -63,7 +63,7 @@ nepal_df
 
 ```{r}
 # unique(nepal_df$IndicatorName)
-table(tolower(nepal_df$IndicatorName))
+#table(tolower(nepal_df$IndicatorName))
 ```
 
 
@@ -74,30 +74,56 @@ table(tolower(nepal_df$IndicatorName))
 df_t <- transpose(nepal_df)
 rownames(df_t) <- colnames(nepal_df)
 colnames(df_t) <- rownames(nepal_df)
+```
+```{r}
 
 # Rename the columns with the first row. Columns are not properly renamed from above lines.
-colnames(df_t) <- df_t[1,]
-# Remove the first row.
+colnames(df_t) <- df_t[2,]
+# Remove the first and second row.
 df_t <- df_t[-1:-2,]
 nepal_df <- df_t
 nepal_df
 ```
 
 ```{r}
-nepal_df[0]
+dim(nepal_df)[2]
 ```
 
 ```{r}
-df_t <- nepal_df %>% mutate_if(is.character, as.numeric)
-View(df_t)
+# Converting columns to numeric types
+#nepal_df$TM.TAX.MRCH.WM.AR.ZS = as.numeric(as.character(nepal_df$TM.TAX.MRCH.WM.AR.ZS))
+#nepal_df$NY.GDP.PETR.RT.ZS = as.numeric(as.character(nepal_df$NY.GDP.PETR.RT.ZS))
+
+nepal_df[1:dim(nepal_df)[2]] <- sapply(nepal_df[1:dim(nepal_df)[2]],as.numeric)
+sapply(nepal_df, class)
 ```
 
 ```{r}
-cor(nepal_df)
+# Replace NA values with 0
+#nepal_df["TM.TAX.MRCH.WM.AR.ZS"][is.na(nepal_df["TM.TAX.MRCH.WM.AR.ZS"])] <- 0
+#nepal_df["NY.GDP.PETR.RT.ZS"][is.na(nepal_df["NY.GDP.PETR.RT.ZS"])] <- 0
+
+# Replace na values with 0 using is.na()
+nepal_df[is.na(nepal_df)] <- 0
 ```
 
 ```{r}
-plot(nepal_df)
+# Finding correlation between each columns in the dataframe
+#cor(nepal_df$TM.TAX.MRCH.WM.AR.ZS, nepal_df$NY.GDP.PETR.RT.ZS)
+
+View(cor(nepal_df))
+```
+
+```{r}
+View(nepal_df)
+```
+
+```{r}
+
+```
+
+```{r}
+#plot(nepal_df)
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
