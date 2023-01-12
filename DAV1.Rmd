@@ -159,6 +159,8 @@ Parameter Selection:
 # IC.TAX.LABR.CP.ZS -> Labor tax and contributions (% of commercial profits) | Labor tax and contributions is the amount of taxes and mandatory contributions on labor paid by the business.
 # GC.TAX.YPKG.CN -> Taxes on income, profits and capital gains (current LCU)
 # GC.TAX.IMPT.ZS ->	Customs and other import duties (% of tax revenue)
+# GC.TAX.IMPT.CN -> Customs and other import duties (current LCU)
+# GC.TAX.EXPT.ZS ->	Taxes on exports (% of tax revenue)
 # GC.TAX.EXPT.CN -> Taxes on exports (current LCU)
 # IC.TAX.TOTL.CP.ZS -> Total tax and contribution rate (% of profit)
 
@@ -198,7 +200,7 @@ Parameter Selection:
 
 ```{r}
 ## Sample parameters selection to achieve project objective.
-nepal_df <- select(nepal_df, 'YEAR', 'GC.TAX.GSRV.VA.ZS', 'GC.TAX.GSRV.CN', 'GC.TAX.TOTL.GD.ZS', 'IC.TAX.LABR.CP.ZS', 'GC.TAX.YPKG.CN', 'GC.TAX.IMPT.ZS', 'GC.TAX.EXPT.CN', 'IC.TAX.TOTL.CP.ZS', 'NY.GDP.MKTP.KD', 'NY.GDP.MKTP.KD.ZG', 'SL.IND.EMPL.ZS', 'SL.IND.EMPL.FE.ZS', 'SL.IND.EMPL.MA.ZS', 'SL.AGR.EMPL.ZS', 'SL.AGR.EMPL.FE.ZS', 'SL.AGR.EMPL.MA.ZS')
+nepal_df <- select(nepal_df, 'YEAR', 'GC.TAX.GSRV.VA.ZS', 'GC.TAX.GSRV.CN', 'GC.TAX.TOTL.GD.ZS', 'IC.TAX.LABR.CP.ZS', 'GC.TAX.YPKG.CN', 'GC.TAX.IMPT.ZS', 'GC.TAX.IMPT.CN', 'GC.TAX.EXPT.ZS', 'GC.TAX.EXPT.CN', 'IC.TAX.TOTL.CP.ZS', 'NY.GDP.MKTP.KD', 'NY.GDP.MKTP.KD.ZG', 'SL.IND.EMPL.ZS', 'SL.IND.EMPL.FE.ZS', 'SL.IND.EMPL.MA.ZS', 'SL.AGR.EMPL.ZS', 'SL.AGR.EMPL.FE.ZS', 'SL.AGR.EMPL.MA.ZS')
 nepal_df
 ```
 
@@ -361,6 +363,67 @@ ylab("GDP (constant 2015 US$)") +
 scale_x_continuous() +
 scale_y_continuous() +
 ggtitle("Regression: GDP x taxes on goods & services")
+```
+
+```{r}
+ggplot(nepal_df, aes(x = SL.IND.EMPL.ZS, y = GC.TAX.GSRV.VA.ZS)) +
+  geom_point() +
+geom_smooth() + # Add a regression line
+xlab("Employment in industry (% of total employment)") +
+ylab("Taxes on goods and services (% value added of industry and services)") +
+scale_x_continuous() +
+scale_y_continuous() +
+ggtitle("Regression: Tax on goods & services X Employment in industry")
+```
+
+```{r}
+ggplot(nepal_df, aes(x = GC.TAX.GSRV.VA.ZS, y = SL.AGR.EMPL.ZS )) +
+  geom_point() +
+geom_smooth() + # Add a regression line
+xlab("Taxes on goods and services (% value added of industry and services)") +
+ylab("Employment in agriculture (% of total employment)") +
+scale_x_continuous() +
+scale_y_continuous() +
+ggtitle("Regression: Tax on goods & services X Employment in agriculture")
+```
+
+```{r}
+ggplot(nepal_df, aes(x = GC.TAX.IMPT.ZS, y = SL.IND.EMPL.ZS)) +
+  geom_point() +
+geom_smooth() + # Add a regression line
+xlab("Customs and other import duties (% of tax revenue)") +
+ylab("Employment in industry (% of total employment)") +
+scale_x_continuous() +
+scale_y_continuous() +
+ggtitle("Regression: Customs Import duties X Employment in industry")
+```
+
+```{r}
+ggplot(nepal_df, aes(x = GC.TAX.IMPT.ZS, y = SL.AGR.EMPL.ZS)) +
+  geom_point() +
+geom_smooth() + # Add a regression line
+xlab("Customs and other import duties (% of tax revenue)") +
+ylab("Employment in agriculture (% of total employment)") +
+scale_x_continuous() +
+scale_y_continuous() +
+ggtitle("Regression: Customs Import duties X Employment in agriculture")
+```
+
+```{r}
+ggplot(nepal_df, aes(x = GC.TAX.IMPT.ZS, y = SL.IND.EMPL.ZS)) +
+  geom_point() +
+geom_smooth() + # Add a regression line
+xlab("Customs and other import duties (% of tax revenue)") +
+ylab("Employment in industry (% of total employment)") +
+scale_x_continuous() +
+scale_y_continuous() +
+ggtitle("Regression: Customs Import duties X Employment in industry")
+```
+
+```{r}
+nepal_df$GC.TAX.EXPT.CN 
+#y = GC.TAX.GSRV.VA.ZS
+
 ```
 
 ```{r}
