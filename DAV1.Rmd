@@ -6,10 +6,14 @@ output: html_notebook
 
 ```{r}
 # Import packages
+
+#install.packages("corrplot")
 library(dplyr)
 library(data.table)
 library(ggplot2)
 library(pastecs)
+library(corrplot)
+#library(ggthemes) # For appearance of plot like theme in ggplot2
 ```
 
 ```{r}
@@ -74,11 +78,16 @@ nepal_df
 ```{r}
 # Transposing the dataframe
 
-# t(nepal_df)
+# df_t <- (t(nepal_df))
 
 df_t <- transpose(nepal_df)
 rownames(df_t) <- colnames(nepal_df)
 colnames(df_t) <- rownames(nepal_df)
+View(df_t)
+```
+
+```{r}
+df_t[0,]
 ```
 
 ```{r}
@@ -88,7 +97,7 @@ colnames(df_t) <- df_t[2,]
 # Remove the first and second row.
 df_t <- df_t[-1:-2,]
 nepal_df <- df_t
-nepal_df
+View(nepal_df)
 ```
 
 ```{r}
@@ -105,6 +114,10 @@ nepal_df
 
 ```{r}
 dim(nepal_df)[2]
+```
+
+```{r}
+nepal_df
 ```
 
 ```{r}
@@ -140,7 +153,7 @@ Parameter Selection:
 
 ```{r}
 ## Sample parameters selection to achieve project objective.
-# GC.TAX.GSRV.VA.ZS -> Taxes on goods and services
+# GC.TAX.GSRV.VA.ZS -> Taxes on goods and services(%)
 # GC.TAX.GSRV.CN
 # GC.TAX.TOTL.GD.ZS -> Tax revenue (% of GDP)
 # IC.TAX.LABR.CP.ZS -> Labor tax and contributions (% of commercial profits) | Labor tax and contributions is the amount of taxes and mandatory contributions on labor paid by the business.
@@ -150,6 +163,7 @@ Parameter Selection:
 # IC.TAX.TOTL.CP.ZS -> Total tax and contribution rate (% of profit)
 
 # NY.GDP.MKTP.KD -> GDP (constant 2015 US$)
+# NY.GDP.MKTP.KD.ZG	-> GDP growth (annual %)
 
 # SL.IND.EMPL.ZS ->	Employment in industry (% of total employment) (modeled ILO estimate)
 # SL.IND.EMPL.FE.ZS -> Employment in industry, female (% of female employment) (modeled ILO estimate)
@@ -184,7 +198,7 @@ Parameter Selection:
 
 ```{r}
 ## Sample parameters selection to achieve project objective.
-nepal_df <- select(nepal_df, 'YEAR', 'GC.TAX.GSRV.VA.ZS', 'GC.TAX.GSRV.CN', 'GC.TAX.TOTL.GD.ZS', 'IC.TAX.LABR.CP.ZS', 'GC.TAX.YPKG.CN', 'GC.TAX.IMPT.ZS', 'GC.TAX.EXPT.CN', 'IC.TAX.TOTL.CP.ZS', 'NY.GDP.MKTP.KD', 'SL.IND.EMPL.ZS', 'SL.IND.EMPL.FE.ZS', 'SL.IND.EMPL.MA.ZS', 'SL.AGR.EMPL.ZS', 'SL.AGR.EMPL.FE.ZS', 'SL.AGR.EMPL.MA.ZS')
+nepal_df <- select(nepal_df, 'YEAR', 'GC.TAX.GSRV.VA.ZS', 'GC.TAX.GSRV.CN', 'GC.TAX.TOTL.GD.ZS', 'IC.TAX.LABR.CP.ZS', 'GC.TAX.YPKG.CN', 'GC.TAX.IMPT.ZS', 'GC.TAX.EXPT.CN', 'IC.TAX.TOTL.CP.ZS', 'NY.GDP.MKTP.KD', 'NY.GDP.MKTP.KD.ZG', 'SL.IND.EMPL.ZS', 'SL.IND.EMPL.FE.ZS', 'SL.IND.EMPL.MA.ZS', 'SL.AGR.EMPL.ZS', 'SL.AGR.EMPL.FE.ZS', 'SL.AGR.EMPL.MA.ZS')
 nepal_df
 ```
 
@@ -193,6 +207,9 @@ Data Quality: Checking the data
 
 ```{r}
 ## Checking quality of data in parameters selected.
+#View(truncate(summary(nepal_df)))
+#df_t <- summary(nepal_df)
+#View(t(df_t))
 View(summary(nepal_df))
 ```
 
@@ -213,24 +230,34 @@ View(cor(nepal_df))
 ```
 
 ```{r}
+# Correlation matrix plot
+
+corrplot(cor(nepal_df), type="lower")
+```
+
+```{r}
 var(nepal_df$GC.TAX.GSRV.VA.ZS)
+# SL.IND.EMPL.ZS  NY.GDP.MKTP.KD
 ```
 
 
 Time series analysis: Trends/patterns in the data over time
 
-```{r}
-#autoregressive integrated moving average (ARIMA) - need to look at it
+```{r fig.height = 4, fig.width = 11}
+# autoregressive integrated moving average (ARIMA) - need to look at it
+# GDP = Consumption + Investment + Government spending + Net exports
 
 p <- ggplot(nepal_df, aes(x=nepal_df$YEAR, y=nepal_df$GC.TAX.GSRV.VA.ZS)) +
   geom_line( color="steelblue") + 
   geom_point() +
   xlab("YEAR") +
-  ylab("GC.TAX.GSRV.VA.ZS") 
+  ylab("Taxes on goods and services(%)") +
+  ggtitle("Percent increase on tax on goods & services each year")
   #scale_x_date(limit=c(as.Date("1960-01-01"),as.Date("2022-12-30"))) +
   
 p
 ```
+
 
 ```{r fig.height = 6, fig.width = 14}
 
@@ -254,7 +281,7 @@ ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
     name = "Taxes on goods and services (current LCU)",
     
     # Second axis
-    sec.axis = sec_axis(~.*50, name="GDP (constant 2015 US$)")
+    sec.axis = sec_axis(~.*1, name="GDP (constant 2015 US$)")
   ) +
 
 #  theme_ipsum() +
@@ -273,26 +300,101 @@ ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
 ```
 
 ```{r}
-# Checking gdp growth on taxes on goods and services
-ggplot(nepal_df, aes(x = GC.TAX.GSRV.CN, y = NY.GDP.MKTP.KD)) +
-  geom_point() +
-geom_smooth() +
-xlab("Taxes on goods and services (current LCU)") +
-ylab("GDP (constant 2015 US$)") +
-scale_x_continuous() +
-scale_y_continuous()
+coeff <- 10
+tax_color <- "black"
+gdp_color <- "steelblue"
+
+ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
+  
+  geom_line( aes(y=nepal_df$SL.IND.EMPL.ZS), size=0.5, color=tax_color) + 
+  geom_line( aes(y=nepal_df$SL.AGR.EMPL.ZS), size=0.5, color=gdp_color) +
+  
+  geom_point(aes(y = nepal_df$SL.IND.EMPL.ZS), size=2, color=tax_color) +
+  geom_point(aes(y = nepal_df$SL.AGR.EMPL.ZS), size=2, color=gdp_color) +
+  
+  scale_y_continuous(
+    
+    # First axis
+    name = "Employment in industry (% of total employment)",
+    
+    # Second axis
+    sec.axis = sec_axis(~.*1, name="Employment in agriculture (% of total employment)")
+  ) +
+
+#  theme_ipsum() +
+  scale_x_continuous(
+    name = "YEAR"
+  ) +
+
+  theme(
+    axis.title.y = element_text(color = tax_color, size=13),
+    axis.title.y.right = element_text(color = gdp_color, size=13)
+  ) +
+
+  ggtitle("Employment in industry & agriculture over time") +
+  theme(plot.title = element_text(hjust = 0.5)) #Title to be at center
+
 ```
 
 ```{r}
+ggplot(nepal_df, aes(x = GC.TAX.GSRV.CN, y = NY.GDP.MKTP.KD)) +
+  geom_point() +
+geom_smooth() + 
+# Add a regression line
+xlab("Taxes on goods and services (current LCU)") +
+ylab("GDP (constant 2015 US$)") +
+scale_x_continuous() +
+scale_y_continuous() +
+ggtitle("Regression: GDP x taxes on goods & services")
+```
+
+
+```{r}
 # Checking GDP growth on every tax % increase
+# with trend line (regression line)
+
 ggplot(nepal_df, aes(x = GC.TAX.GSRV.VA.ZS, y = NY.GDP.MKTP.KD)) +
   geom_point() +
-geom_smooth() +
+geom_smooth() + # Add a regression line
 xlab("Taxes on goods and services (% value added of industry and services)") +
 ylab("GDP (constant 2015 US$)") +
 scale_x_continuous() +
-scale_y_continuous()
+scale_y_continuous() +
+ggtitle("Regression: GDP x taxes on goods & services")
 ```
+
+```{r}
+ggplot(nepal_df, aes(x = nepal_df$SL.IND.EMPL.ZS, y = nepal_df$NY.GDP.MKTP.KD, fill = nepal_df$SL.IND.EMPL.ZS)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.08) +
+  #theme_bw() +
+  xlab("Employment increase(%)") +
+  ylab("GDP (constant 2015 US$)") +
+  theme(axis.text.x = element_text(size = 10)) +
+  theme(axis.text.y = element_text(size = 10)) +
+  ggtitle("Bar plot: GDP vs Employment increase(%)")
+```
+
+```{r}
+ggplot(nepal_df, aes(x = nepal_df$GC.TAX.GSRV.VA.ZS, y = nepal_df$NY.GDP.MKTP.KD, fill = nepal_df$GC.TAX.GSRV.VA.ZS)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.08) +
+  #theme_bw() +
+  xlab("Taxes on goods and services(%)") +
+  ylab("GDP (constant 2015 US$)") +
+  theme(axis.text.x = element_text(size = 10)) +
+  theme(axis.text.y = element_text(size = 10)) +
+  ggtitle("Bar plot: GDP vs Taxes on goods & services(%)")
+#GC.TAX.GSRV.VA.ZS, NY.GDP.MKTP.KD
+```
+
+```{r}
+#a <- filter(nepal_df, YEAR>2012)
+#select(a, GC.TAX.GSRV.CN, NY.GDP.MKTP.KD)
+```
+
+```{r}
+
+```
+
 
 ```{r}
 
@@ -302,11 +404,16 @@ scale_y_continuous()
 nepal_df$NY.GDP.MKTP.KD
 ```
 
+```{r}
+
+```
+
 
 Regression:
 
 ```{r}
 # R
+help("scale_x_continuous")
 ```
 
 
