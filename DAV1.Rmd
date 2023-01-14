@@ -83,7 +83,7 @@ nepal_df
 df_t <- transpose(nepal_df)
 rownames(df_t) <- colnames(nepal_df)
 colnames(df_t) <- rownames(nepal_df)
-View(df_t)
+#View(df_t)
 ```
 
 ```{r}
@@ -220,6 +220,7 @@ stat.desc(nepal_df)
 ```
 
 
+
 Correlation Analysis: Exploring relationship between employment, tax and GDP. Understanding what drives economic activity.
 
 ```{r}
@@ -241,6 +242,7 @@ corrplot(cor(nepal_df), type="lower")
 var(nepal_df$GC.TAX.GSRV.VA.ZS)
 # SL.IND.EMPL.ZS  NY.GDP.MKTP.KD
 ```
+
 
 
 Time series analysis: Trends/patterns in the data over time
@@ -339,6 +341,90 @@ ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
 ```
 
 ```{r}
+coeff <- 10
+ind_color <- "black"
+agr_color <- "steelblue"
+
+ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
+  
+  geom_line( aes(y=nepal_df$SL.IND.EMPL.FE.ZS), size=0.5, color=ind_color) + 
+  geom_line( aes(y=nepal_df$SL.AGR.EMPL.FE.ZS), size=0.5, color=agr_color) +
+  
+  geom_point(aes(y = nepal_df$SL.IND.EMPL.FE.ZS), size=2, color=ind_color) +
+  geom_point(aes(y = nepal_df$SL.AGR.EMPL.FE.ZS), size=2, color=agr_color) +
+  
+  scale_y_continuous(
+    
+    # First axis
+    name = "Employment in industry, female (% of female employment)",
+    
+    # Second axis
+    sec.axis = sec_axis(~.*1, name="Employment in agriculture, female (% of female employment)")
+  ) +
+
+#  theme_ipsum() +
+  scale_x_continuous(
+    name = "YEAR"
+  ) +
+
+  theme(
+    axis.title.y = element_text(color = ind_color, size=13),
+    axis.title.y.right = element_text(color = agr_color, size=13)
+  ) +
+
+  ggtitle("Employment in industry & agriculture, females over time") +
+  theme(plot.title = element_text(hjust = 0.5)) #Title to be at center
+```
+
+```{r}
+coeff <- 10
+ind_color <- "black"
+agr_color <- "steelblue"
+
+ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
+  
+  geom_line( aes(y=nepal_df$SL.IND.EMPL.MA.ZS), size=0.5, color=ind_color) + 
+  geom_line( aes(y=nepal_df$SL.AGR.EMPL.MA.ZS), size=0.5, color=agr_color) +
+  
+  geom_point(aes(y = nepal_df$SL.IND.EMPL.MA.ZS), size=2, color=ind_color) +
+  geom_point(aes(y = nepal_df$SL.AGR.EMPL.MA.ZS), size=2, color=agr_color) +
+  
+  scale_y_continuous(
+    
+    # First axis
+    name = "Employment in industry, male (% of male employment)",
+    
+    # Second axis
+    sec.axis = sec_axis(~.*1, name="Employment in agriculture, male (% of male employment)")
+  ) +
+
+#  theme_ipsum() +
+  scale_x_continuous(
+    name = "YEAR"
+  ) +
+
+  theme(
+    axis.title.y = element_text(color = ind_color, size=13),
+    axis.title.y.right = element_text(color = agr_color, size=13)
+  ) +
+
+  ggtitle("Employment in industry & agriculture, males over time") +
+  theme(plot.title = element_text(hjust = 0.5)) #Title to be at center
+```
+
+
+
+```{r}
+
+```
+
+
+
+Regression:
+
+#help("scale_x_continuous")
+
+```{r}
 ggplot(nepal_df, aes(x = GC.TAX.GSRV.CN, y = NY.GDP.MKTP.KD)) +
   geom_point() +
 geom_smooth() + 
@@ -410,14 +496,29 @@ ggtitle("Regression: Customs Import duties X Employment in agriculture")
 ```
 
 ```{r}
-ggplot(nepal_df, aes(x = GC.TAX.IMPT.ZS, y = SL.IND.EMPL.ZS)) +
+ggplot(nepal_df, aes(x = SL.IND.EMPL.ZS, y = GC.TAX.EXPT.ZS)) +
   geom_point() +
 geom_smooth() + # Add a regression line
-xlab("Customs and other import duties (% of tax revenue)") +
-ylab("Employment in industry (% of total employment)") +
+xlab("Employment in industry (% of total employment)") +
+ylab("Taxes on exports (% of tax revenue)") +
 scale_x_continuous() +
 scale_y_continuous() +
-ggtitle("Regression: Customs Import duties X Employment in industry")
+ggtitle("Regression: Exports vs Employment in Industry")
+```
+
+```{r}
+ggplot(nepal_df, aes(x = GC.TAX.EXPT.ZS, y = SL.AGR.EMPL.ZS)) +
+  geom_point() +
+geom_smooth() + # Add a regression line
+xlab("Taxes on exports (% of tax revenue)") +
+ylab("Employment in agriculture (% of total employment)") +
+scale_x_continuous() +
+scale_y_continuous() +
+ggtitle("Regression: Exports vs Employment in Agriculture")
+```
+
+```{r}
+
 ```
 
 ```{r}
@@ -459,31 +560,20 @@ ggplot(nepal_df, aes(x = nepal_df$GC.TAX.GSRV.VA.ZS, y = nepal_df$NY.GDP.MKTP.KD
 ```
 
 
-```{r}
-
-```
-
-```{r}
-nepal_df$NY.GDP.MKTP.KD
-```
-
-```{r}
-
-```
-
-
-Regression:
-
-```{r}
-# R
-help("scale_x_continuous")
-```
-
-
 Cluster:
 
 ```{r}
-# C
+plot(x = nepal_df$wt,y = nepal_df$mpg,
+   xlab = "Weight",
+   ylab = "Milage",
+   xlim = c(2.5,5),
+   ylim = c(15,30),		 
+   main = "Weight vs Milage"
+)
+```
+
+```{r}
+
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
