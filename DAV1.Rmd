@@ -154,7 +154,7 @@ Parameter Selection:
 ```{r}
 ## Sample parameters selection to achieve project objective.
 # GC.TAX.GSRV.VA.ZS -> Taxes on goods and services(%)
-# GC.TAX.GSRV.CN
+# GC.TAX.GSRV.CN -> Taxes on goods and services (current LCU)
 # GC.TAX.TOTL.GD.ZS -> Tax revenue (% of GDP)
 # IC.TAX.LABR.CP.ZS -> Labor tax and contributions (% of commercial profits) | Labor tax and contributions is the amount of taxes and mandatory contributions on labor paid by the business.
 # GC.TAX.YPKG.CN -> Taxes on income, profits and capital gains (current LCU)
@@ -204,6 +204,8 @@ nepal_df <- select(nepal_df, 'YEAR', 'GC.TAX.GSRV.VA.ZS', 'GC.TAX.GSRV.CN', 'GC.
 nepal_df
 ```
 
+--------------------------------------------------------------------------------
+
 
 Data Quality: Checking the data 
 
@@ -219,6 +221,7 @@ View(summary(nepal_df))
 stat.desc(nepal_df)
 ```
 
+--------------------------------------------------------------------------------
 
 
 Correlation Analysis: Exploring relationship between employment, tax and GDP. Understanding what drives economic activity.
@@ -243,6 +246,7 @@ var(nepal_df$GC.TAX.GSRV.VA.ZS)
 # SL.IND.EMPL.ZS  NY.GDP.MKTP.KD
 ```
 
+--------------------------------------------------------------------------------
 
 
 Time series analysis: Trends/patterns in the data over time
@@ -261,7 +265,9 @@ p <- ggplot(nepal_df, aes(x=nepal_df$YEAR, y=nepal_df$GC.TAX.GSRV.VA.ZS)) +
   
 p
 ```
-
+  1. The percent increase in tax on goods and services have remained around 5.5% from year 1990 to 2005.
+  2. The percent increase in tax on goods and services has been increasing after the year 2005.
+  
 
 ```{r fig.height = 6, fig.width = 14}
 
@@ -302,19 +308,24 @@ ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
   theme(plot.title = element_text(hjust = 0.5)) #Title to be at center
 
 ```
-
+  1. As the tax on goods and services have increased after the year 2005, the GDP has remained same.
+  2. Though the correlation between the indicator (GC.TAX.GSRV.CN & NY.GDP.MKTP.KD) is , the tax has no impact on the        GDP growth over the years.
+  
+  
 ```{r}
+# Check employment in industry and agriculture over the years.
+
 coeff <- 10
-tax_color <- "black"
-gdp_color <- "steelblue"
+ind_color <- "black"
+agr_color <- "steelblue"
 
 ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
   
-  geom_line( aes(y=nepal_df$SL.IND.EMPL.ZS), size=0.5, color=tax_color) + 
-  geom_line( aes(y=nepal_df$SL.AGR.EMPL.ZS), size=0.5, color=gdp_color) +
+  geom_line( aes(y=nepal_df$SL.IND.EMPL.ZS), size=0.5, color=ind_color) + 
+  geom_line( aes(y=nepal_df$SL.AGR.EMPL.ZS), size=0.5, color=agr_color) +
   
-  geom_point(aes(y = nepal_df$SL.IND.EMPL.ZS), size=2, color=tax_color) +
-  geom_point(aes(y = nepal_df$SL.AGR.EMPL.ZS), size=2, color=gdp_color) +
+  geom_point(aes(y = nepal_df$SL.IND.EMPL.ZS), size=2, color=ind_color) +
+  geom_point(aes(y = nepal_df$SL.AGR.EMPL.ZS), size=2, color=agr_color) +
   
   scale_y_continuous(
     
@@ -331,15 +342,18 @@ ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
   ) +
 
   theme(
-    axis.title.y = element_text(color = tax_color, size=13),
-    axis.title.y.right = element_text(color = gdp_color, size=13)
+    axis.title.y = element_text(color = ind_color, size=13),
+    axis.title.y.right = element_text(color = agr_color, size=13)
   ) +
 
   ggtitle("Employment in industry & agriculture over time") +
   theme(plot.title = element_text(hjust = 0.5)) #Title to be at center
 
 ```
-
+  1. After the year 1990, employment in the industrial sector has been increasing each year by .
+  2. After the year 1990, employment in the agriculture sector has been decreasing each year by .
+  
+  
 ```{r}
 coeff <- 10
 ind_color <- "black"
@@ -375,7 +389,10 @@ ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
   ggtitle("Employment in industry & agriculture, females over time") +
   theme(plot.title = element_text(hjust = 0.5)) #Title to be at center
 ```
-
+  1. Percentage in female employment in industry has been increasing by .
+  2. Percentage in female employment in agricuture has been decreasing by .
+  
+  
 ```{r}
 coeff <- 10
 ind_color <- "black"
@@ -411,13 +428,15 @@ ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
   ggtitle("Employment in industry & agriculture, males over time") +
   theme(plot.title = element_text(hjust = 0.5)) #Title to be at center
 ```
-
+  1. Percentage in male employment in industry has been increasing by .
+  2. Percentage in male employment in agriculture has been decreasing by .
 
 
 ```{r}
 
 ```
 
+--------------------------------------------------------------------------------
 
 
 Regression:
@@ -435,7 +454,9 @@ scale_x_continuous() +
 scale_y_continuous() +
 ggtitle("Regression: GDP x taxes on goods & services")
 ```
-
+  1. As taxes on goods and services increases, the GDP has been increasing. 
+  2. The correlation between the two indicators () as , says the same.
+  
 
 ```{r}
 # Checking GDP growth on every tax % increase
@@ -450,7 +471,10 @@ scale_x_continuous() +
 scale_y_continuous() +
 ggtitle("Regression: GDP x taxes on goods & services")
 ```
-
+  1. Taxes on goods and services above 10% shows increase in GDP.
+  2. When taxes on goods and services are within the range 6.5% to 8.5%, the GDP has been fluctuating.
+  
+  
 ```{r}
 ggplot(nepal_df, aes(x = SL.IND.EMPL.ZS, y = GC.TAX.GSRV.VA.ZS)) +
   geom_point() +
@@ -461,7 +485,10 @@ scale_x_continuous() +
 scale_y_continuous() +
 ggtitle("Regression: Tax on goods & services X Employment in industry")
 ```
-
+  1. Increase in taxes on goods and services above 7% shows increase in percent of employment in industry.
+  2. Likewise, the taxes around 7.5% shows percent of employment in industry from 2.5% to 10%.
+  
+  
 ```{r}
 ggplot(nepal_df, aes(x = GC.TAX.GSRV.VA.ZS, y = SL.AGR.EMPL.ZS )) +
   geom_point() +
@@ -472,7 +499,9 @@ scale_x_continuous() +
 scale_y_continuous() +
 ggtitle("Regression: Tax on goods & services X Employment in agriculture")
 ```
-
+  1. Despite the correlation between the indicators (), the increase in taxes on goods and services shows slow decrease      in employment in agriculture.
+  
+  
 ```{r}
 ggplot(nepal_df, aes(x = GC.TAX.IMPT.ZS, y = SL.IND.EMPL.ZS)) +
   geom_point() +
@@ -527,6 +556,7 @@ nepal_df$GC.TAX.EXPT.CN
 
 ```
 
+
 ```{r}
 ggplot(nepal_df, aes(x = nepal_df$SL.IND.EMPL.ZS, y = nepal_df$NY.GDP.MKTP.KD, fill = nepal_df$SL.IND.EMPL.ZS)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.08) +
@@ -559,17 +589,24 @@ ggplot(nepal_df, aes(x = nepal_df$GC.TAX.GSRV.VA.ZS, y = nepal_df$NY.GDP.MKTP.KD
 
 ```
 
+--------------------------------------------------------------------------------
+
 
 Cluster:
 
 ```{r}
-plot(x = nepal_df$wt,y = nepal_df$mpg,
-   xlab = "Weight",
-   ylab = "Milage",
-   xlim = c(2.5,5),
-   ylim = c(15,30),		 
-   main = "Weight vs Milage"
-)
+`
+
+```{r}
+library(scatterplot3d)
+scatterplot3d(nepal_df$GC.TAX.GSRV.CN, nepal_df$NY.GDP.MKTP.KD, nepal_df$SL.IND.EMPL.ZS,
+              xlab = "Tax", ylab = "GDP", zlab = "Employment",
+              type = "h", main = "3D Scatterplot")
+```
+
+```{r}
+#library(rgl)
+#plot3d(nepal_df$GC.TAX.GSRV.CN, nepal_df$NY.GDP.MKTP.KD, nepal_df$SL.IND.EMPL.ZS)
 ```
 
 ```{r}
