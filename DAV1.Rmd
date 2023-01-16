@@ -1,6 +1,19 @@
 ---
-title: "Analyzing economic trends in Nepal"
-output: html_notebook
+
+Title: "Impact of taxes on GDP and employment in Nepal"
+    
+       "Analyzing economic trends in Nepal"
+Output: html_notebook
+
+Coursework: Data Analysis and Visualization
+
+Name: Sunil Karki
+LondonMet ID : 21039796
+College ID: np01ms7a210029
+
+London Metropolitan University
+Islington College
+
 ---
 
 
@@ -44,6 +57,7 @@ nepal_df
 ```
 
 ```{r}
+# Dimension of the dataframe
 dim(nepal_df)
 ```
 
@@ -476,6 +490,9 @@ ggtitle("Regression: GDP x taxes on goods & services")
   
   
 ```{r}
+# Check employment in industry on every tax % increase
+# with trend line (regression line)
+
 ggplot(nepal_df, aes(x = SL.IND.EMPL.ZS, y = GC.TAX.GSRV.VA.ZS)) +
   geom_point() +
 geom_smooth() + # Add a regression line
@@ -490,6 +507,9 @@ ggtitle("Regression: Tax on goods & services X Employment in industry")
   
   
 ```{r}
+# Check employment in agriculture on every tax % increase
+# with trend line (regression line)
+
 ggplot(nepal_df, aes(x = GC.TAX.GSRV.VA.ZS, y = SL.AGR.EMPL.ZS )) +
   geom_point() +
 geom_smooth() + # Add a regression line
@@ -503,6 +523,9 @@ ggtitle("Regression: Tax on goods & services X Employment in agriculture")
   
   
 ```{r}
+# Check employment in industry on every customs/import duties % increase
+# with trend line (regression line)
+
 ggplot(nepal_df, aes(x = GC.TAX.IMPT.ZS, y = SL.IND.EMPL.ZS)) +
   geom_point() +
 geom_smooth() + # Add a regression line
@@ -512,8 +535,14 @@ scale_x_continuous() +
 scale_y_continuous() +
 ggtitle("Regression: Customs Import duties X Employment in industry")
 ```
+  1. As customs and import duties increases, the employment in industrial sector decreases.
+  2. It can be concluded that as customs and import duties is above 25%, we can see steep decline in employment in           industry.
+
 
 ```{r}
+# Check employment in agriculture on every customs/import duties % increase
+# with trend line (regression line)
+
 ggplot(nepal_df, aes(x = GC.TAX.IMPT.ZS, y = SL.AGR.EMPL.ZS)) +
   geom_point() +
 geom_smooth() + # Add a regression line
@@ -523,19 +552,29 @@ scale_x_continuous() +
 scale_y_continuous() +
 ggtitle("Regression: Customs Import duties X Employment in agriculture")
 ```
+  1. Though the correlation between the two indicator ( and ) is , the increase in customs and import duties has small       change on the employment in agriculture.
+
 
 ```{r}
-ggplot(nepal_df, aes(x = SL.IND.EMPL.ZS, y = GC.TAX.EXPT.ZS)) +
+# Check employment in industry on every export taxes % increase
+# with trend line (regression line)
+
+ggplot(nepal_df, aes(x = GC.TAX.EXPT.ZS , y = SL.IND.EMPL.ZS )) +
   geom_point() +
 geom_smooth() + # Add a regression line
-xlab("Employment in industry (% of total employment)") +
-ylab("Taxes on exports (% of tax revenue)") +
+xlab("Taxes on exports (% of tax revenue)") +
+ylab("Employment in industry (% of total employment)") +
 scale_x_continuous() +
 scale_y_continuous() +
-ggtitle("Regression: Exports vs Employment in Industry")
+ggtitle("Regression: Exports taxes vs Employment in Industry")
 ```
+  1. As taxes on exports increases, the employment in industry remains unchanged(but slightly decreasing).
+
 
 ```{r}
+# Check employment in agriculture on every export taxes % increase
+# with trend line (regression line)
+
 ggplot(nepal_df, aes(x = GC.TAX.EXPT.ZS, y = SL.AGR.EMPL.ZS)) +
   geom_point() +
 geom_smooth() + # Add a regression line
@@ -545,45 +584,8 @@ scale_x_continuous() +
 scale_y_continuous() +
 ggtitle("Regression: Exports vs Employment in Agriculture")
 ```
+  1. As taxes on exports increases, the employment in agriculture remains unchanged(but slightly increasing).
 
-```{r}
-
-```
-
-```{r}
-nepal_df$GC.TAX.EXPT.CN 
-#y = GC.TAX.GSRV.VA.ZS
-
-```
-
-
-```{r}
-ggplot(nepal_df, aes(x = nepal_df$SL.IND.EMPL.ZS, y = nepal_df$NY.GDP.MKTP.KD, fill = nepal_df$SL.IND.EMPL.ZS)) +
-  geom_bar(stat = "identity", position = "dodge", width = 0.08) +
-  #theme_bw() +
-  xlab("Employment increase(%)") +
-  ylab("GDP (constant 2015 US$)") +
-  theme(axis.text.x = element_text(size = 10)) +
-  theme(axis.text.y = element_text(size = 10)) +
-  ggtitle("Bar plot: GDP vs Employment increase(%)")
-```
-
-```{r}
-ggplot(nepal_df, aes(x = nepal_df$GC.TAX.GSRV.VA.ZS, y = nepal_df$NY.GDP.MKTP.KD, fill = nepal_df$GC.TAX.GSRV.VA.ZS)) +
-  geom_bar(stat = "identity", position = "dodge", width = 0.08) +
-  #theme_bw() +
-  xlab("Taxes on goods and services(%)") +
-  ylab("GDP (constant 2015 US$)") +
-  theme(axis.text.x = element_text(size = 10)) +
-  theme(axis.text.y = element_text(size = 10)) +
-  ggtitle("Bar plot: GDP vs Taxes on goods & services(%)")
-#GC.TAX.GSRV.VA.ZS, NY.GDP.MKTP.KD
-```
-
-```{r}
-#a <- filter(nepal_df, YEAR>2012)
-#select(a, GC.TAX.GSRV.CN, NY.GDP.MKTP.KD)
-```
 
 ```{r}
 
@@ -592,12 +594,53 @@ ggplot(nepal_df, aes(x = nepal_df$GC.TAX.GSRV.VA.ZS, y = nepal_df$NY.GDP.MKTP.KD
 --------------------------------------------------------------------------------
 
 
-Cluster:
+Bar Plots:
 
 ```{r}
-`
+# Bar plot for GDP vs employment in industry
+
+ggplot(nepal_df, aes(x = nepal_df$SL.IND.EMPL.ZS, y = nepal_df$NY.GDP.MKTP.KD, fill = nepal_df$SL.IND.EMPL.ZS)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.08) +
+  #theme_bw() +
+  xlab("Employment in industry (% of total employment)") +
+  ylab("GDP (constant 2015 US$)") +
+  theme(axis.text.x = element_text(size = 10)) +
+  theme(axis.text.y = element_text(size = 10)) +
+  ggtitle("Bar plot: GDP vs Employment in industry")
+```
+  1. GDP is highest(around $30 billion) when employment in industry(% of total employment) is 15%.
+  2. GDP is lowest(below $10 billion) when employment in industry(% of total employment) is 2.7%.
+
 
 ```{r}
+# Bar plot for GDP vs taxes on good and services
+
+ggplot(nepal_df, aes(x = nepal_df$GC.TAX.GSRV.VA.ZS, y = nepal_df$NY.GDP.MKTP.KD, fill = nepal_df$GC.TAX.GSRV.VA.ZS)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.08) +
+  #theme_bw() +
+  xlab("Taxes on goods and services(%)") +
+  ylab("GDP (constant 2015 US$)") +
+  theme(axis.text.x = element_text(size = 10)) +
+  theme(axis.text.y = element_text(size = 10)) +
+  ggtitle("Bar plot: GDP vs Taxes on goods & services(%)")
+
+```
+  1. GDP is highest(around $30 billion) when employment in taxes on goods and sevices is 10.6%.
+  2. GDP is lowest(below $10 billion) when employment in industry(% of total employment) is 7%.
+
+
+```{r}
+
+```
+
+--------------------------------------------------------------------------------
+
+
+Cluster Analysis:
+
+```{r}
+# Scatterplot for Taxes on goods and services and GDP
+
 library(scatterplot3d)
 scatterplot3d(nepal_df$GC.TAX.GSRV.CN, nepal_df$NY.GDP.MKTP.KD, nepal_df$SL.IND.EMPL.ZS,
               xlab = "Tax", ylab = "GDP", zlab = "Employment",
