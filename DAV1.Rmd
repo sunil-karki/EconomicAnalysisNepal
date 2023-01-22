@@ -111,7 +111,7 @@ colnames(df_t) <- df_t[2,]
 # Remove the first and second row.
 df_t <- df_t[-1:-2,]
 nepal_df <- df_t
-View(nepal_df)
+nepal_df
 ```
 
 ```{r}
@@ -142,6 +142,12 @@ nepal_df
 
 nepal_df[1:dim(nepal_df)[2]] <- sapply(nepal_df[1:dim(nepal_df)[2]],as.numeric)
 sapply(nepal_df, class)
+```
+
+```{r}
+# Check if there are any null values
+head(is.na(nepal_df))
+sum(is.na(nepal_df))
 ```
 
 ```{r}
@@ -228,13 +234,36 @@ Data Quality: Checking the data
 #View(truncate(summary(nepal_df)))
 #df_t <- summary(nepal_df)
 #View(t(df_t))
-View(summary(nepal_df))
+summary(nepal_df)
 ```
 
 ```{r}
-stat.desc(nepal_df)
+View(stat.desc(nepal_df))
 ```
 
+--------------------------------------------------------------------------------
+
+
+Looking for Normal Distribution:
+
+```{r fig.height = 4, fig.width = 5}
+# Plotting histogram for GDP growth (annual %)
+hist(nepal_df$NY.GDP.MKTP.KD.ZG , main = "Histogram for GDP growth in Nepal"  )
+```
+
+```{r fig.height = 4, fig.width = 5}
+# Plotting histogram for GDP (constant 2015 US$)
+hist(nepal_df$NY.GDP.MKTP.KD    , main = "Histogram for GDP (constant 2015 US$) in Nepal"  )
+```
+
+```{r fig.height = 4, fig.width = 6}
+# Plotting histogram for Employment in agriculture, male (% of male employment) (modeled ILO estimate)
+hist(nepal_df$SL.AGR.EMPL.MA.ZS, main = "Histogram for Employment in agriculture, male in Nepal"  )
+```
+
+  1. These plots were made for every columns (parameters chosen) for analysis.
+  2. Normal distribution found not appropriate for this data. For this, it needs to have a lot of observations       and frequency. Thus the histogram will not have many bins to show the distribution of data, making it not       so informative.
+  
 --------------------------------------------------------------------------------
 
 
@@ -249,10 +278,10 @@ Correlation Analysis: Exploring relationship between employment, tax and GDP. Un
 View(cor(nepal_df))
 ```
 
-```{r}
+```{r fig.height = 10, fig.width = 8}
 # Correlation matrix plot
 
-corrplot(cor(nepal_df), type="lower")
+corrplot(cor(nepal_df), type="lower", method ="number")
 ```
 
 ```{r}
@@ -323,7 +352,7 @@ ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
 
 ```
   1. As the tax on goods and services have increased after the year 2005, the GDP has remained same.
-  2. Though the correlation between the indicator (GC.TAX.GSRV.CN & NY.GDP.MKTP.KD) is , the tax has no impact on the        GDP growth over the years.
+  2. Though the correlation between the indicator (GC.TAX.GSRV.CN & NY.GDP.MKTP.KD) is 0.80, the tax has no          impact on the GDP growth over the years by looking at the trend curve.
   
   
 ```{r}
@@ -654,6 +683,33 @@ scatterplot3d(nepal_df$GC.TAX.GSRV.CN, nepal_df$NY.GDP.MKTP.KD, nepal_df$SL.IND.
 
 ```{r}
 
+```
+
+--------------------------------------------------------------------------------
+
+
+Bayes Theorem Testing:
+
+```{r}
+nepal_dt <-  nepal_df
+nepal_dt$GDP_change <- ifelse(nepal_df$NY.GDP.MKTP.KD.ZG > 0, 1, 0)
+nepal_dt
+```
+
+```{r}
+P_GDP_increase <- sum(nepal_dt$GDP_change)/nrow(nepal_dt)
+P_GDP_increase
+```
+
+```{r}
+x <- 5
+P_tax_given_GDP_increase <- sum(nepal_dt[nepal_dt$GDP_change == 1 & nepal_dt$tax == x,]$tax)/sum(nepal_dt$GDP_change == 1)
+P_tax_given_GDP_increase
+```
+
+```{r}
+sum(nepal_dt$GDP_change)
+nrow(nepal_dt)
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
