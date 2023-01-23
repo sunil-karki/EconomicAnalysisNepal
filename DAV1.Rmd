@@ -2,7 +2,7 @@
 
 # Title: "Impact of taxes on GDP and employment in Nepal"
     
-       "Analyzing economic trends in Nepal"
+#       "Analyzing economic trends in Nepal"
 # Output: html_notebook
 
 # Coursework: Data Analysis and Visualization
@@ -49,9 +49,9 @@ options(scipen = 999)
 nepal_dt <- read.csv("Source Dataset-API_NPL_DS2.csv", skip=4, header=TRUE, stringsAsFactors = FALSE)
 meta_country <- read.csv("MetaData_Country.csv", header=TRUE, stringsAsFactors = FALSE)
 meta_indictr <- read.csv("MetaData_Indicator.csv", header=TRUE, stringsAsFactors = FALSE)
-nepal_dt
-meta_country
-meta_indictr
+head(nepal_dt)
+head(meta_country)
+head(meta_indictr)
 ```
 
 
@@ -60,7 +60,7 @@ Data Preparation: Preparing data after the import
 ```{r}
 temp_df = filter(nepal_dt, grepl("tax", tolower(IndicatorName), fixed = TRUE) | grepl("tax", tolower(IndicatorCode), fixed = TRUE))
 nepal_df <- temp_df
-nepal_df
+head(nepal_df)
 ```
 
 ```{r}
@@ -71,7 +71,7 @@ dim(nepal_df)
 ```{r}
 temp_df = filter(nepal_dt, grepl("gdp", tolower(IndicatorName), fixed = TRUE) | grepl("gdp", tolower(IndicatorCode), fixed = TRUE))
 nepal_df <- rbind(nepal_df, temp_df)
-nepal_df
+head(nepal_df)
 ```
 
 ```{r}
@@ -81,14 +81,14 @@ dim(nepal_df)
 ```{r}
 temp_df = filter(nepal_dt, grepl("employment", tolower(IndicatorName), fixed = TRUE) | grepl("employment", tolower(IndicatorCode), fixed = TRUE))
 nepal_df <- rbind(nepal_df, temp_df)
-nepal_df
+head(nepal_df)
 ```
 
 ```{r}
 # Drop first and second column
 
 nepal_df <- nepal_df[-c(1,2)]
-nepal_df
+head(nepal_df)
 ```
 
 ```{r}
@@ -118,7 +118,7 @@ colnames(df_t) <- df_t[2,]
 # Remove the first and second row.
 df_t <- df_t[-1:-2,]
 nepal_df <- df_t
-nepal_df
+tail(nepal_df)
 ```
 
 ```{r}
@@ -130,7 +130,7 @@ colnames(nepal_df)[1] <- "YEAR"
 
 # Removing a character 'X' from the column: YEAR in nepal_df
 nepal_df$YEAR <- gsub("X","",as.character(nepal_df$YEAR))
-nepal_df
+tail(nepal_df)
 ```
 
 ```{r}
@@ -138,7 +138,7 @@ dim(nepal_df)[2]
 ```
 
 ```{r}
-nepal_df
+tail(nepal_df)
 ```
 
 ```{r}
@@ -167,7 +167,7 @@ nepal_df[is.na(nepal_df)] <- 0
 ```
 
 ```{r}
-nepal_df
+tail(nepal_df)
 ```
 
 ```{r}
@@ -228,7 +228,7 @@ Parameter Selection:
 ```{r}
 ## Sample parameters selection to achieve project objective.
 nepal_df <- select(nepal_df, 'YEAR', 'GC.TAX.GSRV.VA.ZS', 'GC.TAX.GSRV.CN', 'GC.TAX.TOTL.GD.ZS', 'IC.TAX.LABR.CP.ZS', 'GC.TAX.YPKG.CN', 'GC.TAX.IMPT.ZS', 'GC.TAX.IMPT.CN', 'GC.TAX.EXPT.ZS', 'GC.TAX.EXPT.CN', 'IC.TAX.TOTL.CP.ZS', 'NY.GDP.MKTP.KD', 'NY.GDP.MKTP.KD.ZG', 'SL.IND.EMPL.ZS', 'SL.IND.EMPL.FE.ZS', 'SL.IND.EMPL.MA.ZS', 'SL.AGR.EMPL.ZS', 'SL.AGR.EMPL.FE.ZS', 'SL.AGR.EMPL.MA.ZS')
-nepal_df
+tail(nepal_df)
 ```
 
 --------------------------------------------------------------------------------
@@ -714,23 +714,262 @@ Bayes Theorem Testing:
 ```{r}
 nepal_dt <-  nepal_df
 nepal_dt$GDP_change <- ifelse(nepal_df$NY.GDP.MKTP.KD.ZG > 0, 1, 0)
-nepal_dt
+
+nepal_dt$tax_change <- ifelse(nepal_df$GC.TAX.GSRV.VA.ZS > 8, 1, 0)
+head(select(nepal_dt, 'YEAR', 'GDP_change', 'tax_change'))
 ```
 
 ```{r}
+# Probability gdp will increase if the tax on goods and services is more than 8%
 P_GDP_increase <- sum(nepal_dt$GDP_change)/nrow(nepal_dt)
 P_GDP_increase
+
+P_tax_more <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+P_tax_more
+
+nepal_dt$tax_gdp_inc <- ifelse((nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                               & (nepal_df$GC.TAX.GSRV.VA.ZS > 8), 1, 0)
+p_tax_gdp_inc <- mean(nepal_dt$tax_gdp_inc)
+p_tax_gdp_inc
+
+Prob <- (p_tax_gdp_inc * P_GDP_increase)/P_tax_more
+print(paste("Prob: " , Prob))
 ```
 
 ```{r}
-x <- 5
-P_tax_given_GDP_increase <- sum(nepal_dt[nepal_dt$GDP_change == 1 & nepal_dt$tax == x,]$tax)/sum(nepal_dt$GDP_change == 1)
-P_tax_given_GDP_increase
+# Probability gdp will increase if the tax on goods and services is more than 6% to 12%
+a_df <- data.frame(GDP_change=NA, tax_change=NA, P_GDP_increase=NA,
+                  P_tax_more=NA, p_tax_gdp_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:12) {
+  nepal_dt <-  nepal_df
+  nepal_dt$GDP_change <- ifelse(nepal_df$NY.GDP.MKTP.KD.ZG > 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(nepal_df$GC.TAX.GSRV.VA.ZS > x, 1, 0)
+  
+  P_GDP_increase <- sum(nepal_dt$GDP_change)/nrow(nepal_dt)
+  P_tax_more <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_gdp_inc <- ifelse((nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (nepal_df$GC.TAX.GSRV.VA.ZS > x), 1, 0)
+  p_tax_gdp_inc <- mean(nepal_dt$tax_gdp_inc)
+  
+  Prob <- (p_tax_gdp_inc * P_GDP_increase)/P_tax_more
+  
+  temp_hp <- data.frame(tax_percent = x, P_GDP_increase=P_GDP_increase,
+                  P_tax_more=P_tax_more, p_tax_gdp_inc=p_tax_gdp_inc, Probability=Prob)
+  a_df <- rbind(a_df, temp_hp)
+}
+
+a_df
 ```
 
 ```{r}
-sum(nepal_dt$GDP_change)
-nrow(nepal_dt)
+# Probability gdp will increase if the tax on goods and services is less than 6% to 17%
+a_df <- data.frame(GDP_change=NA, tax_change=NA, P_GDP_increase=NA,
+                  P_tax_less=NA, p_tax_gdp_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:17) {
+  nepal_dt <-  nepal_df
+  nepal_dt$GDP_change <- ifelse(nepal_df$NY.GDP.MKTP.KD.ZG > 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(nepal_df$GC.TAX.GSRV.VA.ZS < x, 1, 0)
+  
+  P_GDP_increase <- sum(nepal_dt$GDP_change)/nrow(nepal_dt)
+  P_tax_less <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_gdp_inc <- ifelse((nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (nepal_df$GC.TAX.GSRV.VA.ZS < x), 1, 0)
+  p_tax_gdp_inc <- mean(nepal_dt$tax_gdp_inc)
+  
+  Prob <- (p_tax_gdp_inc * P_GDP_increase)/P_tax_less
+  
+  temp_hp <- data.frame(tax_percent = x, P_GDP_increase=P_GDP_increase,
+                  P_tax_less=P_tax_less, p_tax_gdp_inc=p_tax_gdp_inc, Probability=Prob)
+  a_df <- rbind(a_df, temp_hp)
+}
+
+a_df
+```
+
+```{r}
+# Probability gdp will decrease if the tax on goods and services is more than 6% to 12%
+a_df <- data.frame(GDP_change=NA, tax_change=NA, P_GDP_increase=NA,
+                  P_tax_more=NA, p_tax_gdp_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:12) {
+  nepal_dt <-  nepal_df
+  nepal_dt$GDP_change <- ifelse(nepal_df$NY.GDP.MKTP.KD.ZG < 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(nepal_df$GC.TAX.GSRV.VA.ZS > x, 1, 0)
+  
+  P_GDP_increase <- sum(nepal_dt$GDP_change)/nrow(nepal_dt)
+  P_tax_more <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_gdp_inc <- ifelse((nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (nepal_df$GC.TAX.GSRV.VA.ZS > x), 1, 0)
+  p_tax_gdp_inc <- mean(nepal_dt$tax_gdp_inc)
+  
+  Prob <- (p_tax_gdp_inc * P_GDP_increase)/P_tax_more
+  
+  temp_hp <- data.frame(tax_percent = x, P_GDP_increase=P_GDP_increase,
+                  P_tax_more=P_tax_more, p_tax_gdp_inc=p_tax_gdp_inc, Probability=Prob)
+  a_df <- rbind(a_df, temp_hp)
+}
+
+a_df
+```
+
+```{r}
+# Probability gdp will decrease if the tax on goods and services is less than 6% to 17%
+a_df <- data.frame(GDP_change=NA, tax_change=NA, P_GDP_increase=NA,
+                  P_tax_less=NA, p_tax_gdp_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:17) {
+  nepal_dt <-  nepal_df
+  nepal_dt$GDP_change <- ifelse(nepal_df$NY.GDP.MKTP.KD.ZG > 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(nepal_df$GC.TAX.GSRV.VA.ZS < x, 1, 0)
+  
+  P_GDP_increase <- sum(nepal_dt$GDP_change)/nrow(nepal_dt)
+  P_tax_less <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_gdp_inc <- ifelse((nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (nepal_df$GC.TAX.GSRV.VA.ZS < x), 1, 0)
+  p_tax_gdp_inc <- mean(nepal_dt$tax_gdp_inc)
+  
+  Prob <- (p_tax_gdp_inc * P_GDP_increase)/P_tax_less
+  
+  temp_hp <- data.frame(tax_percent = x, P_GDP_increase=P_GDP_increase,
+                  P_tax_less=P_tax_less, p_tax_gdp_inc=p_tax_gdp_inc, Probability=Prob)
+  a_df <- rbind(a_df, temp_hp)
+}
+
+a_df
+```
+
+```{r}
+new_nepal_df <- nepal_df %>%  mutate(empl_change = SL.IND.EMPL.ZS  - lag(SL.IND.EMPL.ZS ))
+new_nepal_df <- new_nepal_df %>% filter(round(SL.IND.EMPL.ZS) !=0 & round(GC.TAX.GSRV.VA.ZS) !=0)
+#select(new_nepal_df, 'YEAR', 'SL.IND.EMPL.ZS', 'GC.TAX.GSRV.VA.ZS')
+#test[is.na(test)] <- 0
+```
+
+```{r}
+# Probability employment in industry will increase if the tax on goods and services is more than 6% to 16%
+prob_df <- data.frame(tax_percent=NA, P_emp_ind_increase=NA, P_tax_more=NA,
+                  p_tax_emp_ind_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:15) {
+  nepal_dt <-  new_nepal_df
+  nepal_dt$emp_ind_change <- ifelse(new_nepal_df$empl_change > 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(new_nepal_df$GC.TAX.GSRV.VA.ZS > x, 1, 0)
+  
+  P_emp_ind_increase <- sum(nepal_dt$emp_ind_change)/nrow(nepal_dt)
+  P_tax_more <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_emp_inc <- ifelse((new_nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (new_nepal_df$GC.TAX.GSRV.VA.ZS < x), 1, 0)
+  p_tax_emp_ind_inc <- mean(nepal_dt$tax_emp_inc)
+  
+  Prob <- (p_tax_emp_ind_inc * P_emp_ind_increase)/P_tax_more
+  
+  temp_hp <- data.frame(tax_percent = x, P_emp_ind_increase=P_emp_ind_increase,
+                  P_tax_more=P_tax_more, p_tax_emp_ind_inc=p_tax_emp_ind_inc, Probability=Prob)
+  prob_df <- rbind(prob_df, temp_hp)
+}
+
+prob_df
+
+```
+
+```{r}
+# Probability employment in industry will increase if the tax on goods and services is less than 6% to 16%
+prob_df <- data.frame(tax_percent=NA, P_emp_ind_increase=NA, P_tax_less=NA,
+                  p_tax_emp_ind_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:15) {
+  nepal_dt <-  new_nepal_df
+  nepal_dt$emp_ind_change <- ifelse(new_nepal_df$empl_change > 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(new_nepal_df$GC.TAX.GSRV.VA.ZS < x, 1, 0)
+  
+  P_emp_ind_increase <- sum(nepal_dt$emp_ind_change)/nrow(nepal_dt)
+  P_tax_less <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_gdp_inc <- ifelse((new_nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (new_nepal_df$GC.TAX.GSRV.VA.ZS < x), 1, 0)
+  p_tax_emp_ind_inc <- mean(nepal_dt$tax_gdp_inc)
+  
+  Prob <- (p_tax_emp_ind_inc * P_emp_ind_increase)/P_tax_less
+  
+  temp_hp <- data.frame(tax_percent = x, P_emp_ind_increase=P_emp_ind_increase,
+                  P_tax_less=P_tax_less, p_tax_emp_ind_inc=p_tax_emp_ind_inc, Probability=Prob)
+  prob_df <- rbind(prob_df, temp_hp)
+}
+
+prob_df
+```
+
+```{r}
+# Probability employment in industry will decrease if the tax on goods and services is more than 6% to 16%
+prob_df <- data.frame(tax_percent=NA, P_emp_ind_decrease=NA, P_tax_more=NA,
+                  p_tax_emp_ind_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:15) {
+  nepal_dt <-  new_nepal_df
+  nepal_dt$emp_ind_change <- ifelse(new_nepal_df$empl_change < 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(new_nepal_df$GC.TAX.GSRV.VA.ZS > x, 1, 0)
+  
+  P_emp_ind_decrease <- sum(nepal_dt$emp_ind_change)/nrow(nepal_dt)
+  P_tax_more <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_emp_inc <- ifelse((new_nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (new_nepal_df$GC.TAX.GSRV.VA.ZS < x), 1, 0)
+  p_tax_emp_ind_inc <- mean(nepal_dt$tax_emp_inc)
+  
+  Prob <- (p_tax_emp_ind_inc * P_emp_ind_decrease)/P_tax_more
+  
+  temp_hp <- data.frame(tax_percent = x, P_emp_ind_decrease=P_emp_ind_decrease,
+                  P_tax_more=P_tax_more, p_tax_emp_ind_inc=p_tax_emp_ind_inc, Probability=Prob)
+  prob_df <- rbind(prob_df, temp_hp)
+}
+
+prob_df
+```
+
+```{r}
+# Probability employment in industry will decrease if the tax on goods and services is less than 6% to 16%
+prob_df <- data.frame(tax_percent=NA, P_emp_ind_decrease=NA, P_tax_less=NA,
+                  p_tax_emp_ind_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:15) {
+  nepal_dt <-  new_nepal_df
+  nepal_dt$emp_ind_change <- ifelse(new_nepal_df$empl_change < 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(new_nepal_df$GC.TAX.GSRV.VA.ZS < x, 1, 0)
+  
+  P_emp_ind_decrease <- sum(nepal_dt$emp_ind_change)/nrow(nepal_dt)
+  P_tax_less <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_gdp_inc <- ifelse((new_nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (new_nepal_df$GC.TAX.GSRV.VA.ZS < x), 1, 0)
+  p_tax_emp_ind_inc <- mean(nepal_dt$tax_gdp_inc)
+  
+  Prob <- (p_tax_emp_ind_inc * P_emp_ind_decrease)/P_tax_less
+  
+  temp_hp <- data.frame(tax_percent = x, P_emp_ind_decrease=P_emp_ind_decrease,
+                  P_tax_less=P_tax_less, p_tax_emp_ind_inc=p_tax_emp_ind_inc, Probability=Prob)
+  prob_df <- rbind(prob_df, temp_hp)
+}
+
+prob_df
+```
+
+```{r}
+
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
