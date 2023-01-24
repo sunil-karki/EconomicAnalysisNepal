@@ -36,6 +36,7 @@ library(data.table)
 library(ggplot2)
 library(pastecs)
 library(corrplot)
+library(DataExplorer)
 #library(ggthemes) # For appearance of plot like theme in ggplot2
 ```
 
@@ -246,6 +247,54 @@ summary(nepal_df)
 
 ```{r}
 View(stat.desc(nepal_df))
+```
+
+```{r}
+plot_missing(nepal_df)
+```
+
+```{r}
+plot_density(nepal_df)
+```
+
+```{r}
+# Box plot by GDP growth
+plot_boxplot(nepal_df, by="NY.GDP.MKTP.KD.ZG")
+```
+
+```{r}
+# Box plot by tax on goods and services
+plot_boxplot(nepal_df, by="GC.TAX.GSRV.VA.ZS")
+```
+
+```{r}
+# Box plot by employment in agriculture
+plot_boxplot(nepal_df, by="SL.AGR.EMPL.ZS")
+```
+
+```{r}
+# Box plot by employment in industry
+plot_boxplot(nepal_df, by="SL.IND.EMPL.ZS")
+```
+
+```{r}
+# scatterplot by gdp growth
+plot_scatterplot(nepal_df, by="NY.GDP.MKTP.KD.ZG")
+```
+
+```{r}
+# scatterplot by tax on goods and services
+plot_scatterplot(nepal_df, by="GC.TAX.GSRV.VA.ZS")
+```
+
+```{r}
+# scatterplot by employment in agriculture
+plot_scatterplot(nepal_df, by="SL.AGR.EMPL.ZS")
+```
+
+```{r}
+# scatterplot by employment in industry
+plot_scatterplot(nepal_df, by="SL.IND.EMPL.ZS")
 ```
 
 --------------------------------------------------------------------------------
@@ -822,25 +871,25 @@ a_df
 
 ```{r}
 # Probability gdp will decrease if the tax on goods and services is less than 6% to 17%
-a_df <- data.frame(GDP_change=NA, tax_change=NA, P_GDP_increase=NA,
+a_df <- data.frame(GDP_change=NA, tax_change=NA, P_GDP_decrease=NA,
                   P_tax_less=NA, p_tax_gdp_inc=NA, Probability=NA)[numeric(0), ]
 
 for (x in 6:17) {
   nepal_dt <-  nepal_df
-  nepal_dt$GDP_change <- ifelse(nepal_df$NY.GDP.MKTP.KD.ZG > 0, 1, 0)
+  nepal_dt$GDP_change <- ifelse(nepal_df$NY.GDP.MKTP.KD.ZG < 0, 1, 0)
   
   nepal_dt$tax_change <- ifelse(nepal_df$GC.TAX.GSRV.VA.ZS < x, 1, 0)
   
-  P_GDP_increase <- sum(nepal_dt$GDP_change)/nrow(nepal_dt)
+  P_GDP_decrease <- sum(nepal_dt$GDP_change)/nrow(nepal_dt)
   P_tax_less <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
   
   nepal_dt$tax_gdp_inc <- ifelse((nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
                                  & (nepal_df$GC.TAX.GSRV.VA.ZS < x), 1, 0)
   p_tax_gdp_inc <- mean(nepal_dt$tax_gdp_inc)
   
-  Prob <- (p_tax_gdp_inc * P_GDP_increase)/P_tax_less
+  Prob <- (p_tax_gdp_inc * P_GDP_decrease)/P_tax_less
   
-  temp_hp <- data.frame(tax_percent = x, P_GDP_increase=P_GDP_increase,
+  temp_hp <- data.frame(tax_percent = x, P_GDP_decrease=P_GDP_decrease,
                   P_tax_less=P_tax_less, p_tax_gdp_inc=p_tax_gdp_inc, Probability=Prob)
   a_df <- rbind(a_df, temp_hp)
 }
@@ -913,7 +962,7 @@ prob_df
 ```
 
 ```{r}
-# Probability employment in industry will decrease if the tax on goods and services is more than 6% to 16%
+# Probability employment in industry will decrease if the tax on goods and services is more than 6% to 15%
 prob_df <- data.frame(tax_percent=NA, P_emp_ind_decrease=NA, P_tax_more=NA,
                   p_tax_emp_ind_inc=NA, Probability=NA)[numeric(0), ]
 
