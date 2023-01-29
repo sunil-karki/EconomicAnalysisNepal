@@ -1,0 +1,1027 @@
+---
+  
+  # Title: "Impact of taxes on GDP and employment in Nepal"
+  
+  #       "Analyzing economic trends in Nepal"
+  # Output: html_notebook
+  
+  # Coursework: Data Analysis and Visualization
+  
+  # Name: Sunil Karki
+  # LondonMet ID : 21039796
+  # College ID: np01ms7a210029
+
+# London Metropolitan University
+# Islington College
+
+---
+  
+  
+  #----------------------------------------------------------------------------------------------
+# Set the working directory below.
+
+# Setting environment
+# remove(list=ls())
+# setwd("~")
+
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Import packages
+
+#install.packages("corrplot")
+
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(pastecs)
+library(corrplot)
+library(DataExplorer)
+#library(ggthemes) # For appearance of plot like theme in ggplot2
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# make evironment not to change large number to exponential
+options(scipen = 999)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Import dataset
+nepal_dt <- read.csv("Source Dataset-API_NPL_DS#2.csv", skip=4, header=TRUE, stringsAsFactors = FALSE)
+meta_country <- read.csv("MetaData_Country.csv", header=TRUE, stringsAsFactors = FALSE)
+meta_indictr <- read.csv("MetaData_Indicator.csv", header=TRUE, stringsAsFactors = FALSE)
+head(nepal_dt)
+head(meta_country)
+head(meta_indictr)
+#----------------------------------------------------------------------------------------------
+
+
+# Data Preparation: Preparing data after the import
+
+#----------------------------------------------------------------------------------------------
+temp_df = filter(nepal_dt, grepl("tax", tolower(IndicatorName), fixed = TRUE) | grepl("tax", tolower(IndicatorCode), fixed = TRUE))
+nepal_df <- temp_df
+head(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Dimension of the dataframe
+dim(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+temp_df = filter(nepal_dt, grepl("gdp", tolower(IndicatorName), fixed = TRUE) | grepl("gdp", tolower(IndicatorCode), fixed = TRUE))
+nepal_df <- rbind(nepal_df, temp_df)
+head(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+dim(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+temp_df = filter(nepal_dt, grepl("employment", tolower(IndicatorName), fixed = TRUE) | grepl("employment", tolower(IndicatorCode), fixed = TRUE))
+nepal_df <- rbind(nepal_df, temp_df)
+head(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Drop first and second column
+
+nepal_df <- nepal_df[-c(1,2)]
+head(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# unique(nepal_df$IndicatorName)
+#table(tolower(nepal_df$IndicatorName))
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Transposing the dataframe
+
+# df_t <- (t(nepal_df))
+
+df_t <- transpose(nepal_df)
+rownames(df_t) <- colnames(nepal_df)
+colnames(df_t) <- rownames(nepal_df)
+#View(df_t)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+df_t[0,]
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Rename the columns with the first row. Columns are not properly renamed from above lines.
+colnames(df_t) <- df_t[2,]
+
+# Remove the first and second row.
+df_t <- df_t[-1:-2,]
+nepal_df <- df_t
+tail(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Keep rownames as a first column
+
+#setDT(df_t, keep.rownames = TRUE)[]
+nepal_df <- cbind(names = rownames(nepal_df), nepal_df)
+colnames(nepal_df)[1] <- "YEAR"
+
+# Removing a character 'X' from the column: YEAR in nepal_df
+nepal_df$YEAR <- gsub("X","",as.character(nepal_df$YEAR))
+tail(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+dim(nepal_df)[2]
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+tail(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Converting columns to numeric types
+
+#nepal_df$TM.TAX.MRCH.WM.AR.ZS = as.numeric(as.character(nepal_df$TM.TAX.MRCH.WM.AR.ZS))
+#nepal_df$NY.GDP.PETR.RT.ZS = as.numeric(as.character(nepal_df$NY.GDP.PETR.RT.ZS))
+
+nepal_df[1:dim(nepal_df)[2]] <- sapply(nepal_df[1:dim(nepal_df)[2]],as.numeric)
+sapply(nepal_df, class)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Check if there are any null values
+head(is.na(nepal_df))
+sum(is.na(nepal_df))
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Replace NA values with 0
+#nepal_df["TM.TAX.MRCH.WM.AR.ZS"][is.na(nepal_df["TM.TAX.MRCH.WM.AR.ZS"])] <- 0
+#nepal_df["NY.GDP.PETR.RT.ZS"][is.na(nepal_df["NY.GDP.PETR.RT.ZS"])] <- 0
+
+# Replace na values with 0 using is.na()
+nepal_df[is.na(nepal_df)] <- 0
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+tail(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Viewing the data after preparing it.
+View(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+
+# Parameter Selection: 
+  
+  #----------------------------------------------------------------------------------------------
+## Sample parameters selection to achieve project objective.
+# GC.TAX.GSRV.VA.ZS -> Taxes on goods and services(%)
+# GC.TAX.GSRV.CN -> Taxes on goods and services (current LCU)
+# GC.TAX.TOTL.GD.ZS -> Tax revenue (% of GDP)
+# IC.TAX.LABR.CP.ZS -> Labor tax and contributions (% of commercial profits) | Labor tax and contributions 
+#  is the amount of taxes and mandatory contributions on labor paid by the business.
+# GC.TAX.YPKG.CN -> Taxes on income, profits and capital gains (current LCU)
+# GC.TAX.IMPT.ZS ->	Customs and other import duties (% of tax revenue)
+# GC.TAX.IMPT.CN -> Customs and other import duties (current LCU)
+# GC.TAX.EXPT.ZS ->	Taxes on exports (% of tax revenue)
+# GC.TAX.EXPT.CN -> Taxes on exports (current LCU)
+# IC.TAX.TOTL.CP.ZS -> Total tax and contribution rate (% of profit)
+
+# NY.GDP.MKTP.KD -> GDP (constant 2015 US$)
+# NY.GDP.MKTP.KD.ZG	-> GDP growth (annual %)
+
+# SL.IND.EMPL.ZS ->	Employment in industry (% of total employment) (modeled ILO estimate)
+# SL.IND.EMPL.FE.ZS -> Employment in industry, female (% of female employment) (modeled ILO estimate)
+# SL.IND.EMPL.MA.ZS -> Employment in industry, male (% of male employment) (modeled ILO estimate)
+# SL.AGR.EMPL.ZS -> Employment in agriculture (% of total employment) (modeled ILO estimate)
+# SL.AGR.EMPL.FE.ZS -> Employment in agriculture, female (% of female employment) (modeled ILO estimate)
+# SL.AGR.EMPL.MA.ZS -> Employment in agriculture, male (% of male employment) (modeled ILO estimate)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+## Sample parameter selection to achieve project objective.
+# GC.TAX.GSRV.VA.ZS, NY.GDP.MKTP.KD  0.8481471
+# GC.TAX.GSRV.VA.ZS, SL.IND.EMPL.ZS  0.8880489
+# GC.TAX.GSRV.VA.ZS, SL.IND.EMPL.FE.ZS 0.8928028
+# GC.TAX.GSRV.VA.ZS, SL.IND.EMPL.MA.ZS 0.8939309
+# GC.TAX.GSRV.VA.ZS, SL.AGR.EMPL.ZS 0.8268747
+# GC.TAX.GSRV.VA.ZS, SL.AGR.EMPL.FE.ZS 0.8333567
+# GC.TAX.GSRV.VA.ZS, SL.AGR.EMPL.MA.ZS 0.8062022
+# GC.TAX.INTT.RV.ZS, SL.IND.EMPL.ZS 0.727295
+# GC.TAX.INTT.RV.ZS, SL.IND.EMPL.FE.ZS 0.7059692
+# GC.TAX.INTT.RV.ZS, SL.IND.EMPL.MA.ZS 0.7179946
+# GC.TAX.TOTL.GD.ZS, SL.IND.EMPL.ZS 0.893035
+# GC.TAX.TOTL.GD.ZS, SL.IND.EMPL.FE.ZS 0.8984195
+# GC.TAX.TOTL.GD.ZS, SL.IND.EMPL.MA.ZS 0.8992892
+# IC.TAX.LABR.CP.ZS
+# GC.TAX.YPKG.CN
+# GC.TAX.IMPT.ZS
+# GC.TAX.EXPT.CN
+# IC.TAX.TOTL.CP.ZS
+
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+## Sample parameters selection to achieve project objective.
+nepal_df <- select(nepal_df, 'YEAR', 'GC.TAX.GSRV.VA.ZS', 'GC.TAX.GSRV.CN', 'GC.TAX.TOTL.GD.ZS', 'IC.TAX.LABR.CP.ZS',
+                   'GC.TAX.YPKG.CN', 'GC.TAX.IMPT.ZS', 'GC.TAX.IMPT.CN', 'GC.TAX.EXPT.ZS', 'GC.TAX.EXPT.CN', 
+                   'IC.TAX.TOTL.CP.ZS', 'NY.GDP.MKTP.KD', 'NY.GDP.MKTP.KD.ZG', 'SL.IND.EMPL.ZS', 'SL.IND.EMPL.FE.ZS', 
+                   'SL.IND.EMPL.MA.ZS', 'SL.AGR.EMPL.ZS', 'SL.AGR.EMPL.FE.ZS', 'SL.AGR.EMPL.MA.ZS')
+tail(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+  
+  
+#  Data Quality: Checking the data 
+
+#----------------------------------------------------------------------------------------------
+## Checking quality of data in parameters selected.
+#View(truncate(summary(nepal_df)))
+#df_t <- summary(nepal_df)
+#View(t(df_t))
+summary(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+View(stat.desc(nepal_df))
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+plot_missing(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+plot_density(nepal_df)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Box plot by GDP growth
+plot_boxplot(nepal_df, by="NY.GDP.MKTP.KD.ZG")
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Box plot by tax on goods and services
+plot_boxplot(nepal_df, by="GC.TAX.GSRV.VA.ZS")
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Box plot by employment in agriculture
+plot_boxplot(nepal_df, by="SL.AGR.EMPL.ZS")
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Box plot by employment in industry
+plot_boxplot(nepal_df, by="SL.IND.EMPL.ZS")
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# scatterplot by gdp growth
+plot_scatterplot(nepal_df, by="NY.GDP.MKTP.KD.ZG")
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# scatterplot by tax on goods and services
+plot_scatterplot(nepal_df, by="GC.TAX.GSRV.VA.ZS")
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# scatterplot by employment in agriculture
+plot_scatterplot(nepal_df, by="SL.AGR.EMPL.ZS")
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# scatterplot by employment in industry
+plot_scatterplot(nepal_df, by="SL.IND.EMPL.ZS")
+#----------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+  
+  
+#  Looking for Normal Distribution:
+  
+  #----------------------------------------------------------------------------------------------{r fig.height = 4, fig.width = 5}
+# Plotting histogram for GDP growth (annual %)
+hist(nepal_df$NY.GDP.MKTP.KD.ZG , main = "Histogram for GDP growth in Nepal"  )
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------{r fig.height = 4, fig.width = 5}
+# Plotting histogram for GDP (constant 2015 US$)
+hist(nepal_df$NY.GDP.MKTP.KD    , main = "Histogram for GDP (constant 2015 US$) in Nepal"  )
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------{r fig.height = 4, fig.width = 6}
+# Plotting histogram for Employment in agriculture, male (% of male employment) (modeled ILO estimate)
+hist(nepal_df$SL.AGR.EMPL.MA.ZS, main = "Histogram for Employment in agriculture, male in Nepal"  )
+#----------------------------------------------------------------------------------------------
+
+##1. These plots were made for every columns (parameters chosen) for analysis.
+##2. Normal distribution found not appropriate for this data. For this, it needs to have a lot of observations       
+#and frequency. Thus the histogram will not have many bins to show the distribution of data, making it not       so informative.
+
+--------------------------------------------------------------------------------
+  
+  
+  #Correlation Analysis: Exploring relationship between employment, tax and GDP. Understanding what drives economic activity.
+
+#----------------------------------------------------------------------------------------------
+# Finding correlation between each columns in the dataframe
+
+# cor(nepal_df$TM.TAX.MRCH.WM.AR.ZS, nepal_df$NY.GDP.PETR.RT.ZS)
+# cor(nepal_df$GC.TAX.TOTL.GD.ZS, nepal_df$SL.IND.EMPL.FE.ZS)
+
+View(cor(nepal_df))
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------{r fig.height = 10, fig.width = 8}
+# Correlation matrix plot
+
+corrplot(cor(nepal_df), type="lower", method ="number")
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+var(nepal_df$GC.TAX.GSRV.VA.ZS)
+# SL.IND.EMPL.ZS  NY.GDP.MKTP.KD
+#----------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+  
+  
+#  Time series analysis: Trends/patterns in the data over time
+
+#----------------------------------------------------------------------------------------------{r fig.height = 4, fig.width = 11}
+# autoregressive integrated moving average (ARIMA) - need to look at it
+# GDP = Consumption + Investment + Government spending + Net exports
+
+p <- ggplot(nepal_df, aes(x=nepal_df$YEAR, y=nepal_df$GC.TAX.GSRV.VA.ZS)) +
+  geom_line( color="steelblue") + 
+  geom_point() +
+  xlab("YEAR") +
+  ylab("Taxes on goods and services(%)") +
+  ggtitle("Percent increase on tax on goods & services each year")
+#scale_x_date(limit=c(as.Date("1960-01-01"),as.Date("2022-12-30"))) +
+
+p
+#----------------------------------------------------------------------------------------------
+##1. The percent increase in tax on goods and services have remained around 5.5% from year 1990 to 2005.
+##2. The percent increase in tax on goods and services has been increasing after the year 2005.
+
+
+#----------------------------------------------------------------------------------------------{r fig.height = 6, fig.width = 14}
+
+# Check tax and gdp over time
+
+coeff <- 10
+tax_color <- "black"
+gdp_color <- "steelblue"
+
+ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
+  
+  geom_line( aes(y=nepal_df$GC.TAX.GSRV.CN), size=0.5, color=tax_color) + 
+  geom_line( aes(y=nepal_df$NY.GDP.MKTP.KD), size=0.5, color=gdp_color) +
+  
+  geom_point(aes(y = nepal_df$GC.TAX.GSRV.CN), size=2, color=tax_color) +
+  geom_point(aes(y = nepal_df$NY.GDP.MKTP.KD), size=2, color=gdp_color) +
+  
+  scale_y_continuous(
+    
+    # First axis
+    name = "Taxes on goods and services (current LCU)",
+    
+    # Second axis
+    sec.axis = sec_axis(~.*1, name="GDP (constant 2015 US$)")
+  ) +
+  
+  #  theme_ipsum() +
+  scale_x_continuous(
+    name = "YEAR"
+  ) +
+  
+  theme(
+    axis.title.y = element_text(color = tax_color, size=13),
+    axis.title.y.right = element_text(color = gdp_color, size=13)
+  ) +
+  
+  ggtitle("Tax and GDP over time") +
+  theme(plot.title = element_text(hjust = 0.5)) #Title to be at center
+
+#----------------------------------------------------------------------------------------------
+#1. As the tax on goods and services have increased after the year 2005, the GDP has remained same.
+#2. Though the correlation between the indicator (GC.TAX.GSRV.CN & NY.GDP.MKTP.KD) is 0.80, the tax has no 
+#  impact on the GDP growth over the years by looking at the trend curve.
+
+
+#----------------------------------------------------------------------------------------------
+# Check employment in industry and agriculture over the years.
+
+coeff <- 10
+ind_color <- "black"
+agr_color <- "steelblue"
+
+ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
+  
+  geom_line( aes(y=nepal_df$SL.IND.EMPL.ZS), size=0.5, color=ind_color) + 
+  geom_line( aes(y=nepal_df$SL.AGR.EMPL.ZS), size=0.5, color=agr_color) +
+  
+  geom_point(aes(y = nepal_df$SL.IND.EMPL.ZS), size=2, color=ind_color) +
+  geom_point(aes(y = nepal_df$SL.AGR.EMPL.ZS), size=2, color=agr_color) +
+  
+  scale_y_continuous(
+    
+    # First axis
+    name = "Employment in industry (% of total employment)",
+    
+    # Second axis
+    sec.axis = sec_axis(~.*1, name="Employment in agriculture (% of total employment)")
+  ) +
+  
+  #  theme_ipsum() +
+  scale_x_continuous(
+    name = "YEAR"
+  ) +
+  
+  theme(
+    axis.title.y = element_text(color = ind_color, size=13),
+    axis.title.y.right = element_text(color = agr_color, size=13)
+  ) +
+  
+  ggtitle("Employment in industry & agriculture over time") +
+  theme(plot.title = element_text(hjust = 0.5)) #Title to be at center
+
+#----------------------------------------------------------------------------------------------
+
+#1. After the year 1990, employment in the industrial sector has been increasing each year by 0.54%.
+#2. After the year 1990, employment in the agriculture sector has been decreasing each year by 8#2.33.
+
+
+#----------------------------------------------------------------------------------------------
+# Plot for employment in industry and agriculture, females over time
+coeff <- 10
+ind_color <- "black"
+agr_color <- "steelblue"
+
+ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
+  
+  geom_line( aes(y=nepal_df$SL.IND.EMPL.FE.ZS), size=0.5, color=ind_color) + 
+  geom_line( aes(y=nepal_df$SL.AGR.EMPL.FE.ZS), size=0.5, color=agr_color) +
+  
+  geom_point(aes(y = nepal_df$SL.IND.EMPL.FE.ZS), size=2, color=ind_color) +
+  geom_point(aes(y = nepal_df$SL.AGR.EMPL.FE.ZS), size=2, color=agr_color) +
+  
+  scale_y_continuous(
+    
+    # First axis
+    name = "Employment in industry, female (% of female employment)",
+    
+    # Second axis
+    sec.axis = sec_axis(~.*1, name="Employment in agriculture, female (% of female employment)")
+  ) +
+  
+  #  theme_ipsum() +
+  scale_x_continuous(
+    name = "YEAR"
+  ) +
+  
+  theme(
+    axis.title.y = element_text(color = ind_color, size=13),
+    axis.title.y.right = element_text(color = agr_color, size=13)
+  ) +
+  
+  ggtitle("Employment in industry & agriculture, females over time") +
+  theme(plot.title = element_text(hjust = 0.5)) #Title to be at center
+#----------------------------------------------------------------------------------------------
+#1. Percentage in female employment in industry has been increasing by 0.30%.
+#2. Percentage in female employment in agriculture has been decreasing by 3.11%.
+
+
+#----------------------------------------------------------------------------------------------
+# Plot for employment in industry and agriculture, males over time
+coeff <- 10
+ind_color <- "black"
+agr_color <- "steelblue"
+
+ggplot(nepal_df, aes(x=nepal_df$YEAR)) +
+  
+  geom_line( aes(y=nepal_df$SL.IND.EMPL.MA.ZS), size=0.5, color=ind_color) + 
+  geom_line( aes(y=nepal_df$SL.AGR.EMPL.MA.ZS), size=0.5, color=agr_color) +
+  
+  geom_point(aes(y = nepal_df$SL.IND.EMPL.MA.ZS), size=2, color=ind_color) +
+  geom_point(aes(y = nepal_df$SL.AGR.EMPL.MA.ZS), size=2, color=agr_color) +
+  
+  scale_y_continuous(
+    
+    # First axis
+    name = "Employment in industry, male (% of male employment)",
+    
+    # Second axis
+    sec.axis = sec_axis(~.*1, name="Employment in agriculture, male (% of male employment)")
+  ) +
+  
+  #  theme_ipsum() +
+  scale_x_continuous(
+    name = "YEAR"
+  ) +
+  
+  theme(
+    axis.title.y = element_text(color = ind_color, size=13),
+    axis.title.y.right = element_text(color = agr_color, size=13)
+  ) +
+  
+  ggtitle("Employment in industry & agriculture, males over time") +
+  theme(plot.title = element_text(hjust = 0.5)) #Title to be at center
+#----------------------------------------------------------------------------------------------
+#1. Percentage in male employment in industry has been increasing by 0.83%.
+#2. Percentage in male employment in agriculture has been decreasing by #2.57%.
+
+
+#----------------------------------------------------------------------------------------------
+# Checking average increase/decrease in rate of employment
+test <- nepal_df %>%  mutate(col_diff = SL.AGR.EMPL.MA.ZS - lag(SL.AGR.EMPL.MA.ZS))
+test[is.na(test)] <- 0
+transform(test, col_diff = as.numeric(col_diff))
+test1 <- test %>% filter(test$col_diff <0)
+test1
+mean(test1$col_diff)
+#----------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+  
+  
+#  Regression:
+  
+  #help("scale_x_continuous")
+  
+  #----------------------------------------------------------------------------------------------
+# Plot for GDP x taxes on goods and services
+ggplot(nepal_df, aes(x = GC.TAX.GSRV.CN, y = NY.GDP.MKTP.KD)) +
+  geom_point() +
+  geom_smooth() + 
+  # Add a regression line
+  xlab("Taxes on goods and services (current LCU)") +
+  ylab("GDP (constant 2015 US$)") +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  ggtitle("Regression: GDP x taxes on goods & services")
+#----------------------------------------------------------------------------------------------
+#1. As taxes on goods and services increases, the GDP has been increasing. 
+#2. The correlation between the two indicators (GC.TAX.GSRV.CN and NY.GDP.MKTP.KD) as 0.80, says the same.
+
+
+#----------------------------------------------------------------------------------------------
+# Checking GDP growth on every tax % increase
+# with trend line (regression line)
+
+ggplot(nepal_df, aes(x = GC.TAX.GSRV.VA.ZS, y = NY.GDP.MKTP.KD)) +
+  geom_point() +
+  geom_smooth() + # Add a regression line
+  xlab("Taxes on goods and services (% value added of industry and services)") +
+  ylab("GDP (constant 2015 US$)") +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  ggtitle("Regression: GDP x taxes on goods & services")
+#----------------------------------------------------------------------------------------------
+#1. Taxes on goods and services above 10% shows increase in GDP.
+#2. When taxes on goods and services are within the range 6.5% to 8.5%, the GDP has been fluctuating.
+
+
+#----------------------------------------------------------------------------------------------
+# Check employment in industry on every tax % increase
+# with trend line (regression line)
+
+ggplot(nepal_df, aes(x = SL.IND.EMPL.ZS, y = GC.TAX.GSRV.VA.ZS)) +
+  geom_point() +
+  geom_smooth() + # Add a regression line
+  xlab("Employment in industry (% of total employment)") +
+  ylab("Taxes on goods and services (% value added of industry and services)") +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  ggtitle("Regression: Tax on goods & services X Employment in industry")
+#----------------------------------------------------------------------------------------------
+#1. Increase in taxes on goods and services above 7% shows increase in percent of employment in industry.
+#2. Likewise, the taxes around 7.5% shows percent of employment in industry from #2.5% to 10%.
+
+
+#----------------------------------------------------------------------------------------------
+# Check employment in agriculture on every tax % increase
+# with trend line (regression line)
+
+ggplot(nepal_df, aes(x = GC.TAX.GSRV.VA.ZS, y = SL.AGR.EMPL.ZS )) +
+  geom_point() +
+  geom_smooth() + # Add a regression line
+  xlab("Taxes on goods and services (% value added of industry and services)") +
+  ylab("Employment in agriculture (% of total employment)") +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  ggtitle("Regression: Tax on goods & services X Employment in agriculture")
+#----------------------------------------------------------------------------------------------
+#1. Despite the correlation between the indicators (GC.TAX.GSRV.VA.ZS and SL.AGR.EMPL.ZS) is 0.83, the increase 
+# in taxes on goods and services shows slow decrease      in employment in agriculture.
+
+
+#----------------------------------------------------------------------------------------------
+# Check employment in industry on every customs/import duties % increase
+# with trend line (regression line)
+df_temp <- filter(nepal_df, GC.TAX.IMPT.ZS > 0, SL.IND.EMPL.ZS > 0)
+
+ggplot(df_temp, aes(x = GC.TAX.IMPT.ZS, y = SL.IND.EMPL.ZS)) +
+  geom_point() +
+  geom_smooth() + # Add a regression line
+  xlab("Customs and other import duties (% of tax revenue)") +
+  ylab("Employment in industry (% of total employment)") +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  ggtitle("Regression: Customs Import duties X Employment in industry")
+#----------------------------------------------------------------------------------------------
+#1. As customs and import duties increases, the employment in industrial sector decreases.
+#2. It can be concluded that as customs and import duties is above 27%, we can see steep decline in employment 
+# in industry.
+
+
+#----------------------------------------------------------------------------------------------
+# Check employment in agriculture on every customs/import duties % increase
+# with trend line (regression line)
+df_temp <- filter(nepal_df, GC.TAX.IMPT.ZS > 0, SL.AGR.EMPL.ZS > 0)
+
+ggplot(df_temp, aes(x = GC.TAX.IMPT.ZS, y = SL.AGR.EMPL.ZS)) +
+  geom_point() +
+  geom_smooth() + # Add a regression line
+  xlab("Customs and other import duties (% of tax revenue)") +
+  ylab("Employment in agriculture (% of total employment)") +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  ggtitle("Regression: Customs Import duties X Employment in agriculture")
+#----------------------------------------------------------------------------------------------
+#1. As the correlation between the two indicator (GC.TAX.IMPT.ZS and SL.AGR.EMPL.ZS) is 0.91, the increase in       
+#   customs and import duties has small change on the employment in agriculture.
+
+
+#----------------------------------------------------------------------------------------------
+# Check employment in industry on every export taxes % increase
+# with trend line (regression line)
+df_temp <- filter(nepal_df, GC.TAX.EXPT.ZS > 0, SL.IND.EMPL.ZS > 0)
+
+ggplot(df_temp, aes(x = GC.TAX.EXPT.ZS , y = SL.IND.EMPL.ZS )) +
+  geom_point() +
+  geom_smooth() + # Add a regression line
+  xlab("Taxes on exports (% of tax revenue)") +
+  ylab("Employment in industry (% of total employment)") +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  ggtitle("Regression: Exports taxes vs Employment in Industry")
+#----------------------------------------------------------------------------------------------
+#1. As taxes on exports increases, the employment in industry remains unchanged(but slightly decreasing).
+
+
+#----------------------------------------------------------------------------------------------
+# Check employment in agriculture on every export taxes % increase
+# with trend line (regression line)
+df_temp <- filter(nepal_df, GC.TAX.EXPT.ZS > 0, SL.AGR.EMPL.ZS > 0)
+
+ggplot(df_temp, aes(x = GC.TAX.EXPT.ZS, y = SL.AGR.EMPL.ZS)) +
+  geom_point() +
+  geom_smooth() + # Add a regression line
+  xlab("Taxes on exports (% of tax revenue)") +
+  ylab("Employment in agriculture (% of total employment)") +
+  scale_x_continuous() +
+  scale_y_continuous() +
+  ggtitle("Regression: Exports vs Employment in Agriculture")
+#----------------------------------------------------------------------------------------------
+#1. As taxes on exports increases, the employment in agriculture remains unchanged(but slightly increasing).
+
+
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+  
+  
+#  Bar Plots:
+  
+  #----------------------------------------------------------------------------------------------
+# Bar plot for GDP vs employment in industry
+
+ggplot(nepal_df, aes(x = nepal_df$SL.IND.EMPL.ZS, y = nepal_df$NY.GDP.MKTP.KD, fill = nepal_df$SL.IND.EMPL.ZS)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.08) +
+  #theme_bw() +
+  xlab("Employment in industry (% of total employment)") +
+  ylab("GDP (constant 2015 US$)") +
+  theme(axis.text.x = element_text(size = 10)) +
+  theme(axis.text.y = element_text(size = 10)) +
+  ggtitle("Bar plot: GDP vs Employment in industry")
+#----------------------------------------------------------------------------------------------
+#1. GDP is highest(around $30 billion) when employment in industry(% of total employment) is 15%.
+#2. GDP is lowest(below $10 billion) when employment in industry(% of total employment) is #2.7%.
+                                                                                                                                  
+                                                                                                                                  
+  #----------------------------------------------------------------------------------------------
+  # Bar plot for GDP vs taxes on good and services
+  
+  ggplot(nepal_df, aes(x = nepal_df$GC.TAX.GSRV.VA.ZS, y = nepal_df$NY.GDP.MKTP.KD, fill = nepal_df$GC.TAX.GSRV.VA.ZS)) +
+    geom_bar(stat = "identity", position = "dodge", width = 0.08) +
+    #theme_bw() +
+    xlab("Taxes on goods and services(%)") +
+    ylab("GDP (constant 2015 US$)") +
+    theme(axis.text.x = element_text(size = 10)) +
+    theme(axis.text.y = element_text(size = 10)) +
+    ggtitle("Bar plot: GDP vs Taxes on goods & services(%)")
+  
+  #----------------------------------------------------------------------------------------------
+  #1. GDP is highest(around $30 billion) when employment in taxes on goods and services is 10.6%.
+  #2. GDP is lowest(below $10 billion) when employment in industry(% of total employment) is 7%.
+                                                                  
+          
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+  
+  
+#  Cluster Analysis:
+  
+  #----------------------------------------------------------------------------------------------
+# Scatterplot for Taxes on goods and services and GDP
+
+library(scatterplot3d)
+scatterplot3d(nepal_df$GC.TAX.GSRV.CN, nepal_df$NY.GDP.MKTP.KD, nepal_df$SL.IND.EMPL.ZS,
+              xlab = "Tax", ylab = "GDP", zlab = "Employment",
+              type = "h", main = "3D Scatterplot")
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+#library(rgl)
+#plot3d(nepal_df$GC.TAX.GSRV.CN, nepal_df$NY.GDP.MKTP.KD, nepal_df$SL.IND.EMPL.ZS)
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+  
+  
+#  Bayes Theorem Testing:
+  
+  #----------------------------------------------------------------------------------------------
+nepal_dt <-  nepal_df
+nepal_dt$GDP_change <- ifelse(nepal_df$NY.GDP.MKTP.KD.ZG > 0, 1, 0)
+
+nepal_dt$tax_change <- ifelse(nepal_df$GC.TAX.GSRV.VA.ZS > 8, 1, 0)
+head(select(nepal_dt, 'YEAR', 'GDP_change', 'tax_change'))
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Probability gdp will increase if the tax on goods and services is more than 8%
+P_GDP_increase <- sum(nepal_dt$GDP_change)/nrow(nepal_dt)
+P_GDP_increase
+
+P_tax_more <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+P_tax_more
+
+nepal_dt$tax_gdp_inc <- ifelse((nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                               & (nepal_df$GC.TAX.GSRV.VA.ZS > 8), 1, 0)
+p_tax_gdp_inc <- mean(nepal_dt$tax_gdp_inc)
+p_tax_gdp_inc
+
+Prob <- (p_tax_gdp_inc * P_GDP_increase)/P_tax_more
+print(paste("Prob: " , Prob))
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Probability gdp will increase if the tax on goods and services is more than 6% to 12%
+a_df <- data.frame(GDP_change=NA, tax_change=NA, P_GDP_increase=NA,
+                   P_tax_more=NA, p_tax_gdp_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:12) {
+  nepal_dt <-  nepal_df
+  nepal_dt$GDP_change <- ifelse(nepal_df$NY.GDP.MKTP.KD.ZG > 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(nepal_df$GC.TAX.GSRV.VA.ZS > x, 1, 0)
+  
+  P_GDP_increase <- sum(nepal_dt$GDP_change)/nrow(nepal_dt)
+  P_tax_more <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_gdp_inc <- ifelse((nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (nepal_df$GC.TAX.GSRV.VA.ZS > x), 1, 0)
+  p_tax_gdp_inc <- mean(nepal_dt$tax_gdp_inc)
+  
+  Prob <- (p_tax_gdp_inc * P_GDP_increase)/P_tax_more
+  
+  temp_hp <- data.frame(tax_percent = x, P_GDP_increase=P_GDP_increase,
+                        P_tax_more=P_tax_more, p_tax_gdp_inc=p_tax_gdp_inc, Probability=Prob)
+  a_df <- rbind(a_df, temp_hp)
+}
+
+a_df
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Probability gdp will increase if the tax on goods and services is less than 6% to 17%
+a_df <- data.frame(GDP_change=NA, tax_change=NA, P_GDP_increase=NA,
+                   P_tax_less=NA, p_tax_gdp_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:17) {
+  nepal_dt <-  nepal_df
+  nepal_dt$GDP_change <- ifelse(nepal_df$NY.GDP.MKTP.KD.ZG > 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(nepal_df$GC.TAX.GSRV.VA.ZS < x, 1, 0)
+  
+  P_GDP_increase <- sum(nepal_dt$GDP_change)/nrow(nepal_dt)
+  P_tax_less <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_gdp_inc <- ifelse((nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (nepal_df$GC.TAX.GSRV.VA.ZS < x), 1, 0)
+  p_tax_gdp_inc <- mean(nepal_dt$tax_gdp_inc)
+  
+  Prob <- (p_tax_gdp_inc * P_GDP_increase)/P_tax_less
+  
+  temp_hp <- data.frame(tax_percent = x, P_GDP_increase=P_GDP_increase,
+                        P_tax_less=P_tax_less, p_tax_gdp_inc=p_tax_gdp_inc, Probability=Prob)
+  a_df <- rbind(a_df, temp_hp)
+}
+
+a_df
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Probability gdp will decrease if the tax on goods and services is more than 6% to 12%
+a_df <- data.frame(GDP_change=NA, tax_change=NA, P_GDP_increase=NA,
+                   P_tax_more=NA, p_tax_gdp_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:12) {
+  nepal_dt <-  nepal_df
+  nepal_dt$GDP_change <- ifelse(nepal_df$NY.GDP.MKTP.KD.ZG < 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(nepal_df$GC.TAX.GSRV.VA.ZS > x, 1, 0)
+  
+  P_GDP_increase <- sum(nepal_dt$GDP_change)/nrow(nepal_dt)
+  P_tax_more <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_gdp_inc <- ifelse((nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (nepal_df$GC.TAX.GSRV.VA.ZS > x), 1, 0)
+  p_tax_gdp_inc <- mean(nepal_dt$tax_gdp_inc)
+  
+  Prob <- (p_tax_gdp_inc * P_GDP_increase)/P_tax_more
+  
+  temp_hp <- data.frame(tax_percent = x, P_GDP_increase=P_GDP_increase,
+                        P_tax_more=P_tax_more, p_tax_gdp_inc=p_tax_gdp_inc, Probability=Prob)
+  a_df <- rbind(a_df, temp_hp)
+}
+
+a_df
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Probability gdp will decrease if the tax on goods and services is less than 6% to 17%
+a_df <- data.frame(GDP_change=NA, tax_change=NA, P_GDP_decrease=NA,
+                   P_tax_less=NA, p_tax_gdp_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:17) {
+  nepal_dt <-  nepal_df
+  nepal_dt$GDP_change <- ifelse(nepal_df$NY.GDP.MKTP.KD.ZG < 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(nepal_df$GC.TAX.GSRV.VA.ZS < x, 1, 0)
+  
+  P_GDP_decrease <- sum(nepal_dt$GDP_change)/nrow(nepal_dt)
+  P_tax_less <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_gdp_inc <- ifelse((nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (nepal_df$GC.TAX.GSRV.VA.ZS < x), 1, 0)
+  p_tax_gdp_inc <- mean(nepal_dt$tax_gdp_inc)
+  
+  Prob <- (p_tax_gdp_inc * P_GDP_decrease)/P_tax_less
+  
+  temp_hp <- data.frame(tax_percent = x, P_GDP_decrease=P_GDP_decrease,
+                        P_tax_less=P_tax_less, p_tax_gdp_inc=p_tax_gdp_inc, Probability=Prob)
+  a_df <- rbind(a_df, temp_hp)
+}
+
+a_df
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+new_nepal_df <- nepal_df %>%  mutate(empl_change = SL.IND.EMPL.ZS  - lag(SL.IND.EMPL.ZS ))
+new_nepal_df <- new_nepal_df %>% filter(round(SL.IND.EMPL.ZS) !=0 & round(GC.TAX.GSRV.VA.ZS) !=0)
+#select(new_nepal_df, 'YEAR', 'SL.IND.EMPL.ZS', 'GC.TAX.GSRV.VA.ZS')
+#test[is.na(test)] <- 0
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Probability employment in industry will increase if the tax on goods and services is more than 6% to 16%
+prob_df <- data.frame(tax_percent=NA, P_emp_ind_increase=NA, P_tax_more=NA,
+                      p_tax_emp_ind_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:15) {
+  nepal_dt <-  new_nepal_df
+  nepal_dt$emp_ind_change <- ifelse(new_nepal_df$empl_change > 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(new_nepal_df$GC.TAX.GSRV.VA.ZS > x, 1, 0)
+  
+  P_emp_ind_increase <- sum(nepal_dt$emp_ind_change)/nrow(nepal_dt)
+  P_tax_more <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_emp_inc <- ifelse((new_nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (new_nepal_df$GC.TAX.GSRV.VA.ZS < x), 1, 0)
+  p_tax_emp_ind_inc <- mean(nepal_dt$tax_emp_inc)
+  
+  Prob <- (p_tax_emp_ind_inc * P_emp_ind_increase)/P_tax_more
+  
+  temp_hp <- data.frame(tax_percent = x, P_emp_ind_increase=P_emp_ind_increase,
+                        P_tax_more=P_tax_more, p_tax_emp_ind_inc=p_tax_emp_ind_inc, Probability=Prob)
+  prob_df <- rbind(prob_df, temp_hp)
+}
+
+prob_df
+
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Probability employment in industry will increase if the tax on goods and services is less than 6% to 16%
+prob_df <- data.frame(tax_percent=NA, P_emp_ind_increase=NA, P_tax_less=NA,
+                      p_tax_emp_ind_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:15) {
+  nepal_dt <-  new_nepal_df
+  nepal_dt$emp_ind_change <- ifelse(new_nepal_df$empl_change > 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(new_nepal_df$GC.TAX.GSRV.VA.ZS < x, 1, 0)
+  
+  P_emp_ind_increase <- sum(nepal_dt$emp_ind_change)/nrow(nepal_dt)
+  P_tax_less <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_gdp_inc <- ifelse((new_nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (new_nepal_df$GC.TAX.GSRV.VA.ZS < x), 1, 0)
+  p_tax_emp_ind_inc <- mean(nepal_dt$tax_gdp_inc)
+  
+  Prob <- (p_tax_emp_ind_inc * P_emp_ind_increase)/P_tax_less
+  
+  temp_hp <- data.frame(tax_percent = x, P_emp_ind_increase=P_emp_ind_increase,
+                        P_tax_less=P_tax_less, p_tax_emp_ind_inc=p_tax_emp_ind_inc, Probability=Prob)
+  prob_df <- rbind(prob_df, temp_hp)
+}
+
+prob_df
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Probability employment in industry will decrease if the tax on goods and services is more than 6% to 15%
+prob_df <- data.frame(tax_percent=NA, P_emp_ind_decrease=NA, P_tax_more=NA,
+                      p_tax_emp_ind_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:15) {
+  nepal_dt <-  new_nepal_df
+  nepal_dt$emp_ind_change <- ifelse(new_nepal_df$empl_change < 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(new_nepal_df$GC.TAX.GSRV.VA.ZS > x, 1, 0)
+  
+  P_emp_ind_decrease <- sum(nepal_dt$emp_ind_change)/nrow(nepal_dt)
+  P_tax_more <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_emp_inc <- ifelse((new_nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (new_nepal_df$GC.TAX.GSRV.VA.ZS < x), 1, 0)
+  p_tax_emp_ind_inc <- mean(nepal_dt$tax_emp_inc)
+  
+  Prob <- (p_tax_emp_ind_inc * P_emp_ind_decrease)/P_tax_more
+  
+  temp_hp <- data.frame(tax_percent = x, P_emp_ind_decrease=P_emp_ind_decrease,
+                        P_tax_more=P_tax_more, p_tax_emp_ind_inc=p_tax_emp_ind_inc, Probability=Prob)
+  prob_df <- rbind(prob_df, temp_hp)
+}
+
+prob_df
+#----------------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------------
+# Probability employment in industry will decrease if the tax on goods and services is less than 6% to 16%
+prob_df <- data.frame(tax_percent=NA, P_emp_ind_decrease=NA, P_tax_less=NA,
+                      p_tax_emp_ind_inc=NA, Probability=NA)[numeric(0), ]
+
+for (x in 6:15) {
+  nepal_dt <-  new_nepal_df
+  nepal_dt$emp_ind_change <- ifelse(new_nepal_df$empl_change < 0, 1, 0)
+  
+  nepal_dt$tax_change <- ifelse(new_nepal_df$GC.TAX.GSRV.VA.ZS < x, 1, 0)
+  
+  P_emp_ind_decrease <- sum(nepal_dt$emp_ind_change)/nrow(nepal_dt)
+  P_tax_less <- sum(nepal_dt$tax_change)/nrow(nepal_dt)
+  
+  nepal_dt$tax_gdp_inc <- ifelse((new_nepal_df$NY.GDP.MKTP.KD.ZG > 0) 
+                                 & (new_nepal_df$GC.TAX.GSRV.VA.ZS < x), 1, 0)
+  p_tax_emp_ind_inc <- mean(nepal_dt$tax_gdp_inc)
+  
+  Prob <- (p_tax_emp_ind_inc * P_emp_ind_decrease)/P_tax_less
+  
+  temp_hp <- data.frame(tax_percent = x, P_emp_ind_decrease=P_emp_ind_decrease,
+                        P_tax_less=P_tax_less, p_tax_emp_ind_inc=p_tax_emp_ind_inc, Probability=Prob)
+  prob_df <- rbind(prob_df, temp_hp)
+}
+
+prob_df
+          
